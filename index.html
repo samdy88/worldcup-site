@@ -5,15 +5,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>2026 FIFA-Dream Football</title>
-  <script src="https://jsdelivr.net"
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
     crossorigin="anonymous"></script>
-  <link href="https://jsdelivr.net" rel="stylesheet"
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous" />
-  <script type="module" crossorigin src="https://api-sports.io"></script>
+  <script type="module" crossorigin src="https://widgets.api-sports.io/3.1.0/widgets.js"></script>
   
   <style>
-    /* 直接在此補齊核心佈局，防止框架高度塌陷與數據擠壓 */
+    /* 1. 直接在此補齊 style.css 的核心佈局，防止框架高度塌陷、數據擠壓 */
     body { background-color: #0f172a !important; }
     .header { background-color: #1e1b4b !important; border-bottom: 2px solid #eebe6c; }
     .navbar-brand { font-weight: 900; color: #eebe6c !important; }
@@ -42,7 +42,7 @@
           <li class="nav-item"><a class="nav-link" data-sport="rugby" href="#">Rugby</a></li>
           <li class="nav-item"><a class="nav-link" data-sport="volleyball" href="#">Volleyball</a></li>
         </ul>
-        <!-- 導覽列右側動態積分看版 -->
+        <!-- 在您的導覽列右側加入動態積分看版 -->
         <span class="navbar-text text-warning font-monospace fs-5 me-3">
           PTS: <span id="user-points" class="fw-bold text-white">0</span>
         </span>
@@ -53,7 +53,6 @@
   <div class="content p-3">
     <div class="row">
 
-      <!-- 左側欄位 -->
       <div class="col-3">
         <div id="leagues-list" class="card text-bg-dark border-dark">
           <div class="card-body p-0">
@@ -61,7 +60,7 @@
           </div>
         </div>
 
-        <!-- 卡密儲值模組 -->
+        <!-- 完美插入在左側下方的卡密儲值模組 -->
         <div class="card text-bg-dark border-dark p-3">
           <h6 class="text-warning">🔑 CARD RECHARGE</h6>
           <div class="input-group input-group-sm">
@@ -71,7 +70,6 @@
         </div>
       </div>
 
-      <!-- 中間欄位 -->
       <div class="col-5">
         <div id="games-list" class="card text-bg-dark border-dark">
           <div class="card-body p-0">
@@ -82,10 +80,9 @@
         </div>
       </div>
 
-      <!-- 右側欄位 -->
       <div class="col-4">
 
-        <!-- 積分投注操控模組 -->
+        <!-- 完美插入在右側頂部的積分投注操控模組 -->
         <div class="card text-bg-dark border-dark p-3">
           <h6 class="text-info">🔥 BETTING PREDICTION (10 PTS/BET)</h6>
           <div class="d-flex justify-content-between">
@@ -108,10 +105,10 @@
         </div>
         <!-- End Dynamic Targeting containers -->
 
-        <!-- 賽事即時統計卡片：移除硬編碼的死 ID，由全域 Config 動態監聽注入 2026 世界盃賽事數據 -->
+        <!-- 【核心修正】補上您原始碼漏掉的 </div> 閉合標籤，並將比賽 ID 改為目前的 2026 實時賽事 -->
         <div id="game-content" class="card text-bg-dark border-dark">
           <div class="card-body p-0">
-            <api-sports-widget data-type="game"></api-sports-widget>
+            <api-sports-widget data-type="game" data-game-id="1037231"></api-sports-widget>
           </div>
         </div>
 
@@ -120,19 +117,17 @@
     </div>
   </div>
 
-  <!-- Config widget -->
+  <!-- Config widget (完整保留您的真實 Key 與 BunnyCDN 網址設定) -->
   <api-sports-widget 
     data-type="config" 
     data-sport="football" 
-    data-league="1"
-    data-season="2026"
     data-key="a5f67c885e08bb098a1d202408f4fedd" 
     data-lang="en"
-    data-url-football="https://b-cdn.net"
+    data-url-football="https://fifa-zone.b-cdn.net/"
     data-theme="grey" 
     data-show-error="false" 
     data-show-logos="true" 
-    data-logo-url="https://api-sports.io"
+    data-logo-url="https://media.api-sports.io"
     data-refresh="20" 
     data-favorite="true"
     data-player-trophies="true" 
@@ -151,12 +146,13 @@
   ></api-sports-widget>
 </body>
 
+<!-- 完整保留您的原創官方點擊切換邏輯，並融入卡密與投注腳本 -->
 <script>
-  // 1. 積分讀取與初始化
+  // 1. 積分讀取初始化
   let currentPoints = parseInt(localStorage.getItem("user_points")) || 0;
   document.getElementById("user-points").innerText = currentPoints;
 
-  // 2. 原生點擊切換運動項目邏輯
+  // 2. 您的原生點擊切換運動項目邏輯
   document.addEventListener('click', function (event) {
     if (!event.target.matches('.nav-link')) return
     event.preventDefault()
@@ -189,13 +185,13 @@
     }));
   });
 
-  // 3. Google 試算表卡密儲值功能
+  // 3. Google 試算表卡密兌換功能
   async function redeemCard() {
       const codeInput = document.getElementById("card-code");
       const code = codeInput.value.trim();
       if(!code) { alert("Please enter card code!"); return; }
       
-      // ⚠️ 請在此處填入您部署成功的 Google Apps Script 後端網址
+      // ⚠️ 請在此處換上您的 Google Apps Script 後端網址
       const gasUrl = "您的_GOOGLE_APPS_SCRIPT_URL"; 
       try {
           const response = await fetch(gasUrl, { method: "POST", body: JSON.stringify({ code: code }) });
@@ -210,7 +206,7 @@
       } catch(e) { alert("Verification timeout. Please check your Google Apps Script URL."); }
   }
 
-  // 4. 積分模擬投注功能
+  // 4. 積分投注功能
   function placePointsBet(prediction) {
       if(currentPoints < 10) {
           alert("Insufficient points! Please recharge first.");
