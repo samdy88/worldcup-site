@@ -3,321 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIFA 2026 世界盃即時賽程與積分投注中心</title>
+    <title>100% 複刻 API-Football 原廠小部件範例</title>
 
-    <!-- 引入 api-sports 官方小部件頂級樣式與核心 JS -->
+    <!-- 1. 【核心複刻】必須引入官方 Widget V3 的 CSS 樣式表 -->
     <link rel="stylesheet" href="https://api-sports.io">
-    <script type="module" src="https://api-sports.io"></script>
 
     <style>
-        :root {
-            --primary-maroon: #8a1538; /* 世界盃經典卡達紅 */
-            --accent-gold: #eebe6c;    /* 奢華金 */
-            --dark-navy: #111827;      /* 科技深灰黑 */
-            --light-bg: #f8fafc;
-        }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
             margin: 0;
-            padding: 0;
-            background-color: var(--light-bg);
+            padding: 20px;
+        }
+        .widget-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        h2 {
+            text-align: center;
             color: #333;
         }
-
-        /* 1. 照搬兼優化 API 官方風格的高質感頁眉 */
-        .api-styled-header {
-            background-color: var(--dark-navy);
-            border-bottom: 3px solid var(--accent-gold);
-            color: white;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-        }
-        .header-logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .header-logo img {
-            height: 35px;
-        }
-        .header-logo h1 {
-            margin: 0;
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            background: linear-gradient(135deg, #ffffff 0%, var(--accent-gold) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .user-status-panel {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 8px 20px;
-            border-radius: 30px;
-            border: 1px solid rgba(238, 190, 108, 0.2);
-        }
-        .points-display {
-            font-size: 14px;
-            color: #9ca3af;
-        }
-        .points-display strong {
-            font-size: 20px;
-            color: var(--accent-gold);
-            margin-left: 5px;
-        }
-
-        /* 2. 吸睛的世界盃大型焦點橫幅 (Hero Banner) */
-        .hero-banner {
-            background: linear-gradient(rgba(138, 21, 56, 0.85), rgba(17, 24, 39, 0.95)), url('https://unsplash.com');
-            background-size: cover;
-            background-position: center;
-            color: white;
-            padding: 40px 20px;
-            text-align: center;
-        }
-        .hero-banner h2 {
-            margin: 0;
-            font-size: 32px;
-            font-weight: 900;
-            color: var(--accent-gold);
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
-        .hero-banner p {
-            margin: 10px 0 0 0;
-            font-size: 16px;
-            opacity: 0.8;
-        }
-
-        /* 頁面主要佈局：左邊放賽程（大佔比吸睛），右邊放投注與儲值 */
-        .main-layout {
-            max-width: 1300px;
-            margin: 25px auto;
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 25px;
-            box-sizing: border-box;
-        }
-
-        @media (max-width: 968px) {
-            .main-layout { grid-template-columns: 1fr; }
-            .api-styled-header { flex-direction: column; gap: 15px; text-align: center; }
-        }
-
-        .card {
-            background: white;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.02);
-            border: 1px solid #e2e8f0;
-            margin-bottom: 20px;
-        }
-        .card h3 {
-            margin-top: 0;
-            margin-bottom: 15px;
-            font-size: 18px;
-            color: var(--dark-navy);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border-left: 4px solid var(--primary-maroon);
-            padding-left: 10px;
-        }
-
-        /* 按鈕與輸入框美化 */
-        .input-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .input-box {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 14px;
-            outline: none;
-        }
-        .btn {
-            background-color: var(--primary-maroon);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn:hover { opacity: 0.9; }
-        .btn-gold { background-color: var(--accent-gold); color: #111; }
-
-        .bet-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        /* 小部件自訂主題偏好：強制契合官方色調 */
-        #wg-api-football-games {
+        /* 自訂小部件主題顏色 (可自由修改) */
+        #wg-api-football {
+            --api-f-primary: #8a1538; /* 主色調：卡達紅 */
             --api-f-bg: #ffffff;
-            --api-f-text: #1f2937;
-            --api-f-primary: #8a1538;
-            border-radius: 12px;
-            overflow: hidden;
+            --api-f-text: #333333;
         }
     </style>
 </head>
 <body>
 
-    <!-- 1. 照搬兼優化 API 官方風格的高質感頁眉 -->
-    <nav class="api-styled-header">
-        <div class="header-logo">
-            <!-- 採用 API-Sports 經典指南針/盾牌概念圖案 -->
-            <img src="https://api-football.com" alt="API Logo">
-            <h1>API-SPORTS WORLD CUP LIVE</h1>
-        </div>
-        <div class="user-status-panel">
-            <div class="points-display">我的模擬積分：<strong id="user-points">0</strong> PTS</div>
-        </div>
-    </nav>
+    <div class="widget-container">
+        <h2>⚽ API-Football 官方即時賽程看板</h2>
 
-    <!-- 2. 世界盃焦點橫幅 (首頁最吸睛元素) -->
-    <div class="hero-banner">
-        <h2>🏆 2026 FIFA 世界盃即時賽程動態中心</h2>
-        <p>全球賽事秒級現場同步 · 數據由原廠 API 高速驅動</p>
-    </div>
-
-    <!-- 3. 主佈局區塊 -->
-    <div class="main-layout">
-
-<!-- 左側：一打開最吸睛的世界盃即時賽程首頁 -->
-<div class="left-content">
-    <div class="card">
-        <h3>📅 本屆世界盃完整賽程與即時比分看板</h3>
-        
-        <!-- 【核心修正】必須加入 data-type="league" 並且指定 data-league (世界盃 ID) 與季別 data-season -->
-        <div id="wg-api-football-games"
+        <!-- 2. 【核心複刻】官方標準的小部件 HTML 容器 -->
+        <!-- ⚠️ 請務必將 data-key 替換為您的真實 API 金鑰 -->
+        <div id="wg-api-football"
              data-host="v3.football.api-sports.io"
              data-key="a5f67c885e08bb098a1d202408f4fedd"
              data-type="league"
              data-league="1"
              data-season="2026"
              data-theme="light"
-             data-tab="today"
              data-refresh="15"
              class="api_football_loader">
         </div>
-
-    </div>
-</div>
-
-
-        <!-- 右側：發卡平台卡密兌換與模擬投注控制面板 -->
-        <div class="right-content">
-
-            <!-- 卡密儲值卡片 -->
-            <div class="card">
-                <h3>🔑 發卡平台卡密點數兌換</h3>
-                <p style="font-size: 13px; color: #64748b; margin: 0 0 10px 0;">請輸入您在外部自動發卡網購得的點數卡密，核對成功後將立即轉化為網站投注積分。</p>
-                <div class="input-group">
-                    <input type="text" id="card-code" class="input-box" placeholder="請輸入卡密序號 (例如: WC-100-XXXX)">
-                    <button class="btn btn-gold" onclick="redeemCard()">點擊兌換</button>
-                </div>
-            </div>
-
-            <!-- 積分下注卡片 -->
-            <div class="card">
-                <h3>🔥 熱門賽事 · 模擬積分競猜</h3>
-                <p style="font-size: 13px; color: #64748b; margin: 0 0 15px 0;">選擇您看好的戰術方向，每注將固定消耗 10 模擬積分。獲勝後將依總池比例手動發獎。</p>
-                <div class="bet-buttons">
-                    <button class="btn" onclick="placePointsBet('主隊勝 (Home)')">主勝</button>
-                    <button class="btn" onclick="placePointsBet('平局 (Draw)')">平局</button>
-                    <button class="btn" onclick="placePointsBet('客隊勝 (Away)')">客勝</button>
-                </div>
-            </div>
-
-            <!-- 免責聲明 -->
-            <div class="card" style="background: #fff5f5; border: 1px solid #fed7d7;">
-                <h3 style="color: #9b2c2c; border-left-color: #9b2c2c;">⚠️ 系統合規合約聲明</h3>
-                <p style="font-size: 12px; color: #9b2c2c; margin: 0; line-height: 1.5; text-align: left;">
-                    本網站架構完全基於前端無伺服器（Serverless）技術開發，僅供世足賽體育數據串接之學術研究。網頁本身絕不經手、不儲存、亦不提供任何法幣或加密貨幣之儲值與博弈管道。
-                </p>
-            </div>
-
-        </div>
-
     </div>
 
-<script>
-    // ==========================================
-    // 1. 初始化讀取：從瀏覽器快取 (LocalStorage) 載入用戶積分
-    // ==========================================
-    let currentPoints = parseInt(localStorage.getItem("user_points")) || 0;
-    document.getElementById("user-points").innerText = currentPoints;
+    <!-- 3. 【最重要的一步】必須在 body 最底部引入官方的 Widgets JS 核心驅動引擎 -->
+    <!-- ⚠️ 必須帶有 type="module"，否則瀏覽器無法執行 -->
+    <script type="module" src="https://api-sports.io"></script>
 
-    // ==========================================
-    // 2. 卡密驗證儲值功能
-    // ==========================================
-    async function redeemCard() {
-        const codeInput = document.getElementById("card-code");
-        const code = codeInput.value.trim();
-
-        // 檢查用戶是否有輸入
-        if (!code) {
-            alert("請輸入卡密序號！");
-            return;
-        }
-
-        // 【關鍵設定】請將下方字串替換成您的 Google Apps Script Web App 網址
-        const gasUrl = "您的_GOOGLE_APPS_SCRIPT_URL";
-
-        try {
-            // 向 Google 後端發送 POST 請求驗證卡密
-            const response = await fetch(gasUrl, {
-                method: "POST",
-                body: JSON.stringify({ code: code })
-            });
-            const result = await response.json();
-
-            // 驗證成功，增加積分並更新本地快取
-            if (result.success) {
-                currentPoints += parseInt(result.points);
-                localStorage.setItem("user_points", currentPoints);
-                document.getElementById("user-points").innerText = currentPoints;
-                alert(result.message);
-                codeInput.value = ""; // 清空輸入框
-            } else {
-                // 驗證失敗（卡密錯誤或已被使用）
-                alert(result.message);
-            }
-        } catch (e) {
-            console.error(e);
-            alert("卡密系統驗證繁忙或網路錯誤，請稍後再試！");
-        }
-    }
-
-    // ==========================================
-    // 3. 積分模擬投注功能
-    // ==========================================
-    function placePointsBet(prediction) {
-        // 檢查積分餘額是否足夠
-        if (currentPoints < 10) {
-            alert("您的積分餘額不足 10 點！請先透過發卡平台取得卡密進行充值。");
-            return;
-        }
-
-        // 扣除 10 積分並更新畫面與本地快取
-        currentPoints -= 10;
-        localStorage.setItem("user_points", currentPoints);
-        document.getElementById("user-points").innerText = currentPoints;
-
-        // 投注成功提示
-        alert("【投注成功】扣除 10 積分！\n您已選擇： " + prediction + "\n\n請等待賽事完場後，管理員執行人工結算。");
-    }
-</script>
+</body>
+</html>
