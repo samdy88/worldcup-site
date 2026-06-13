@@ -1,162 +1,135 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
-
+<html lang="zh-TW">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Awesome Website</title>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
-    crossorigin="anonymous"></script>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet"
-    integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous" />
-  <script type="module" crossorigin src="https://widgets.api-sports.io/3.1.0/widgets.js"></script>
-  <link rel="stylesheet" type="text/css" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 世界盃 Web3 模擬投注站</title>
+    
+    <!-- 1. 【V3 核心修正】引入最新版的 V3 專用樣式表 -->
+    <link rel="stylesheet" href="https://api-sports.io">
+
+    <style>
+        :root { --primary: #8a1538; --accent: #eebe6c; --dark-navy: #111827; --light-bg: #f8fafc; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--light-bg); margin: 0; padding: 0; text-align: center; }
+        
+        /* 照搬並美化的 API 官方風格頁眉 */
+        .api-styled-header {
+            background-color: var(--dark-navy);
+            border-bottom: 3px solid var(--accent-gold);
+            color: white; padding: 15px 30px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        .header-logo { display: flex; align-items: center; gap: 12px; }
+        .header-logo img { height: 35px; }
+        .header-logo h1 { margin: 0; font-size: 20px; font-weight: 800; color: #ffffff; }
+        .user-status-panel { display: flex; align-items: center; gap: 20px; background: rgba(255,255,255,0.05); padding: 8px 20px; border-radius: 30px; }
+        .points-display { font-size: 14px; color: #eebe6c; font-weight: bold; }
+
+        .main-layout { max-width: 1300px; margin: 25px auto; padding: 0 20px; display: grid; grid-template-columns: 2fr 1fr; gap: 25px; box-sizing: border-box; }
+        @media (max-width: 968px) { .main-layout { grid-template-columns: 1fr; } }
+        .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.02); border: 1px solid #e2e8f0; margin-bottom: 20px; text-align: left; }
+        .card h3 { margin-top: 0; font-size: 18px; color: var(--dark-navy); border-left: 4px solid var(--primary); padding-left: 10px; }
+        
+        .input-group { display: flex; gap: 10px; margin-top: 10px; }
+        .input-box { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; }
+        .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; font-weight: bold; border-radius: 8px; cursor: pointer; }
+        .btn-gold { background: var(--accent); color: #111; }
+        .bet-buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px; }
+    </style>
 </head>
-
 <body>
-  <nav class="header navbar navbar-expand-lg bg-body-tertiary sticky-top">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="/">TUTORIAL</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
-        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <a class="nav-link active" data-sport="football" href="#">Football</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-sport="baseball" href="#">Baseball</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-sport="basketball" href="#">Basketball</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-sport="handball" href="#">Handball</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-sport="hockey" href="#">Hockey</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-sport="rugby" href="#">Rugby</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-sport="volleyball" href="#">Volleyball</a>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </nav>
 
-  <div class="content p-3">
-    <div class="row">
-
-      <div class="col-3">
-        <div id="leagues-list" class="card text-bg-dark border-dark">
-          <div class="card-body p-0">
-            <api-sports-widget data-type="leagues"></api-sports-widget>
-          </div>
+    <!-- 頂部官方導覽列頁眉 -->
+    <nav class="api-styled-header">
+        <div class="header-logo">
+            <img src="https://api-football.com" alt="API Logo">
+            <h1 style="background: linear-gradient(135deg, #fff 0%, #eebe6c 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">API-SPORTS WORLD CUP LIVE</h1>
         </div>
-      </div>
+        <div class="user-status-panel">
+            <div class="points-display">我的模擬積分：<span id="user-points">0</span> PTS</div>
+        </div>
+    </nav>
 
-      <div class="col-5">
-        <div id="games-list" class="card text-bg-dark border-dark">
-          <div class="card-body p-0">
-            <div id="games-list">
-              <api-sports-widget data-type="games"></api-sports-widget>
+    <!-- 主佈局區塊 -->
+    <div class="main-layout">
+        
+        <!-- 左側欄位：【核心複刻修正】採用 V3 標準官方自訂標籤 -->
+        <div class="left-content">
+            <div class="card">
+                <h3>📅 本屆世界盃完整賽程與即時比分看板</h3>
+                
+                <!-- ⚠️ 這裡已更換為最新的 V3 引擎標籤，請將 data-key 填入您自己的金鑰 -->
+                <!-- ⚠️ data-show-errors="true" 可以讓您在沒抓到數據時，直接在畫面上看到錯誤原因 -->
+                <api-sports-widget 
+                    data-type="games" 
+                    data-key="a5f67c885e08bb098a1d202408f4fedd" 
+                    data-sport="football"
+                    data-league="1" 
+                    data-season="2026" 
+                    data-theme="light" 
+                    data-refresh="15"
+                    data-show-errors="true">
+                </api-sports-widget>
+
             </div>
-          </div>
         </div>
-      </div>
+        
+        <!-- 右側欄位：功能操縱面板 (卡密與投注) -->
+        <div class="right-content">
+            <div class="card">
+                <h3>🔑 發卡平台卡密點數兌換</h3>
+                <div class="input-group">
+                    <input type="text" id="card-code" class="input-box" placeholder="請輸入卡密序號">
+                    <button class="btn btn-gold" onclick="redeemCard()">點擊兌換</button>
+                </div>
+            </div>
 
-      <div class="col-4">
-
-        <!-- Start Dynamic Targeting containers -->
-        <div class="card text-bg-dark border-dark">
-          <div class="card-body p-0">
-            <div id="standings-content"></div>
-          </div>
+            <div class="card">
+                <h3>🔥 熱門賽事 · 模擬積分競猜</h3>
+                <div class="bet-buttons">
+                    <button class="btn" onclick="placePointsBet('主隊勝 (Home)')">主勝</button>
+                    <button class="btn" onclick="placePointsBet('平局 (Draw)')">平局</button>
+                    <button class="btn" onclick="placePointsBet('客隊勝 (Away)')">客勝</button>
+                </div>
+            </div>
         </div>
-        <div class="card text-bg-dark border-dark">
-          <div class="card-body p-0">
-            <div id="team-content"></div>
-          </div>
-        </div>
-        <!-- End Dynamic Targeting containers -->
-
-        <div id="game-content" class="card text-bg-dark border-dark">
-          <div class="card-body p-0">
-            <api-sports-widget data-type="game" data-game-id="977705"></api-sports-widget>
-          </div>
-        </div>
-
-      </div>
 
     </div>
-  </div>
 
-  
-  <!-- Config widget -->
-  <api-sports-widget 
-    data-type="config" 
-    data-sport="football" 
-    data-key="a5f67c885e08bb098a1d202408f4fedd" 
-    data-url-football="https://fifa-zone.b-cdn.net/"
-    data-lang="en"
-    data-theme="grey" 
-    data-show-error="false" 
-    data-show-logos="true" 
-    data-refresh="20" 
-    data-logo-url="https://media.api-sports.io"
-    data-favorite="true"
-    data-player-trophies="true" 
-    data-standings="true" 
-    data-player-injuries="true" 
-    data-team-squad="true"
-    data-team-statistics="true" 
-    data-player-statistics="true" 
-    data-tab="games" 
-    data-game-tab="statistics"
-    data-target-player="modal" 
-    data-target-league="#games-list" 
-    data-target-team="#team-content"
-    data-target-game="#game-content .card-body" 
-    data-target-standings="#standings-content"
-  ></api-sports-widget>
+    <!-- 2. 【V3 核心修正】必須引入最新 V3 專用的驅動引擎腳本 -->
+    <script type="module" src="https://api-sports.io"></script>
+
+    <!-- 驗證與投注腳本 -->
+    <script>
+        let currentPoints = parseInt(localStorage.getItem("user_points")) || 0;
+        document.getElementById("user-points").innerText = currentPoints;
+
+        async function redeemCard() {
+            const codeInput = document.getElementById("card-code");
+            const code = codeInput.value.trim();
+            if(!code) { alert("請輸入卡密序號！"); return; }
+            const gasUrl = "您的_GOOGLE_APPS_SCRIPT_URL"; 
+            try {
+                const response = await fetch(gasUrl, { method: "POST", body: JSON.stringify({ code: code }) });
+                const result = await response.json();
+                if(result.success) {
+                    currentPoints += parseInt(result.points);
+                    localStorage.setItem("user_points", currentPoints);
+                    document.getElementById("user-points").innerText = currentPoints;
+                    alert(result.message);
+                    codeInput.value = "";
+                } else { alert(result.message); }
+            } catch(e) { alert("卡密系統驗證繁忙，請稍後再試！"); }
+        }
+
+        function placePointsBet(prediction) {
+            if(currentPoints < 10) { alert("您的積分餘額不足 10 點！"); return; }
+            currentPoints -= 10;
+            localStorage.setItem("user_points", currentPoints);
+            document.getElementById("user-points").innerText = currentPoints;
+            alert("【投注成功】扣除 10 積分！您已選擇： " + prediction);
+        }
+    </script>
 </body>
-<script>
-  document.addEventListener('click', function (event) {
-
-    if (!event.target.matches('.nav-link')) return
-    event.preventDefault()
-
-    let sport = event.target.getAttribute('data-sport')
-
-    let widget = document.querySelector('api-sports-widget[data-type="config"]');
-            widget.setAttribute('data-sport', sport);
-
-    let leagues = document.querySelector('api-sports-widget[data-type="leagues"]');
-            leagues.innerHTML = ''
-            leagues.setAttribute('data-sport', sport)
-            leagues.connectedCallback()
-
-    let games = document.querySelector('api-sports-widget[data-type="games"]');
-            games.innerHTML = ''
-            games.setAttribute('data-sport', sport)
-            games.connectedCallback()
-
-    let game = document.querySelector('api-sports-widget[data-type="game"]');
-            game.innerHTML = ''
-            game.setAttribute('data-sport', sport)
-            game.connectedCallback()
-
-    window.document.dispatchEvent(new Event("DOMContentLoaded", {
-      bubbles: true,
-      cancelable: true
-    }));
-  })
-</script>
-
 </html>
