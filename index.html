@@ -196,22 +196,27 @@
     <!-- 3. 主佈局區塊 -->
     <div class="main-layout">
 
-        <!-- 左側：一打開最吸睛的世界盃即時賽程首頁 (大圖面板) -->
-        <div class="left-content">
-            <div class="card">
-                <h3>📅 本屆世界盃完整賽程與即時比分看板</h3>
-                <!-- 調用 API-Sports 專屬的賽程即時看板小部件 (Live & Fixtures) -->
-                <!-- 注意：請將 data-key 替換成您在 api-sports 申請的免費 API Key -->
-                <div id="wg-api-football-games"
-                     data-host="v3.football.api-sports.io"
-                     data-key="a5f67c885e08bb098a1d202408f4fedd"
-                     data-id="1"
-                     data-theme="light"
-                     data-refresh="15"
-                     class="api_football_loader">
-                </div>
-            </div>
+<!-- 左側：一打開最吸睛的世界盃即時賽程首頁 -->
+<div class="left-content">
+    <div class="card">
+        <h3>📅 本屆世界盃完整賽程與即時比分看板</h3>
+        
+        <!-- 【核心修正】必須加入 data-type="league" 並且指定 data-league (世界盃 ID) 與季別 data-season -->
+        <div id="wg-api-football-games"
+             data-host="v3.football.api-sports.io"
+             data-key="您的_API_SPORTS_KEY"
+             data-type="league"
+             data-league="1"
+             data-season="2026"
+             data-theme="light"
+             data-tab="today"
+             data-refresh="15"
+             class="api_football_loader">
         </div>
+
+    </div>
+</div>
+
 
         <!-- 右側：發卡平台卡密兌換與模擬投注控制面板 -->
         <div class="right-content">
