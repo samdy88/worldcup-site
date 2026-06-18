@@ -5,7 +5,7 @@ const STORAGE_KEYS = {
 const API_BASE = '';
 const STARTING_POINTS = 500;
 
-const demoMatches = [
+let demoMatches = [
   { id: 'wc2026-001', date: '2026-06-11', time: '20:00', home: 'Mexico', away: 'South Africa', group: 'Group A', venue: 'Estadio Azteca', status: 'soon', score: '0 - 0' },
   { id: 'wc2026-002', date: '2026-06-12', time: '18:00', home: 'Canada', away: 'Japan', group: 'Group B', venue: 'BMO Field', status: 'soon', score: '0 - 0' },
   { id: 'wc2026-003', date: '2026-06-13', time: '21:00', home: 'United States', away: 'Germany', group: 'Group C', venue: 'MetLife Stadium', status: 'live', score: '1 - 1' },
@@ -14,7 +14,7 @@ const demoMatches = [
   { id: 'wc2026-final', date: '2026-07-19', time: '19:00', home: 'TBD Finalist 1', away: 'TBD Finalist 2', group: 'Final', venue: 'MetLife Stadium', status: 'future', score: '0 - 0' }
 ];
 
-const teams = [
+let teams = [
   ['Mexico', 'A', 84, 'S. Giménez'],
   ['South Africa', 'A', 72, 'P. Tau'],
   ['Canada', 'B', 79, 'A. Davies'],
@@ -27,7 +27,7 @@ const teams = [
   ['Spain', 'E', 89, 'Pedri']
 ];
 
-const baseOdds = {
+let baseOdds = {
   'wc2026-001': { HOME: 1.86, DRAW: 3.35, AWAY: 4.20 },
   'wc2026-002': { HOME: 2.18, DRAW: 3.10, AWAY: 3.05 },
   'wc2026-003': { HOME: 2.45, DRAW: 3.40, AWAY: 2.62 },
@@ -35,6 +35,10 @@ const baseOdds = {
   'wc2026-005': { HOME: 2.55, DRAW: 3.25, AWAY: 2.70 },
   'wc2026-final': { HOME: 2.05, DRAW: 3.25, AWAY: 3.45 }
 };
+
+let standingsGroups = [];
+let externalPools = [];
+let predictionOverrides = [];
 
 let currentUser = null;
 let selectedMatchId = demoMatches[0].id;
@@ -58,6 +62,29 @@ function saveToken(token) {
 
 function clearToken() {
   localStorage.removeItem(STORAGE_KEYS.token);
+}
+
+
+async function loadFifa2026Data() {
+  try {
+    const [fixtures, teamData, standingsData, oddsData, poolData, predictionData] = await Promise.all([
+      apiRequest('/api/fixtures'),
+      apiRequest('/api/teams'),
+      apiRequest('/api/standings'),
+      apiRequest('/api/odds'),
+      apiRequest('/api/external-pools'),
+      apiRequest('/api/predictions')
+    ]);
+    if (fixtures.matches?.length) demoMatches = fixtures.matches;
+    if (teamData.teams?.length) teams = teamData.teams;
+    if (standingsData.standings?.length) standingsGroups = standingsData.standings;
+    if (oddsData.oddsByMatchId) baseOdds = oddsData.oddsByMatchId;
+    externalPools = poolData.pools || [];
+    predictionOverrides = predictionData.predictions || [];
+    selectedMatchId = demoMatches[0]?.id || selectedMatchId;
+  } catch (error) {
+    console.warn('FIFA 2026 data API unavailable, using demo fallback.', error);
+  }
 }
 
 function moneylineLabel(selection) {
@@ -175,6 +202,9 @@ function getCurrentOdds(matchId) {
 }
 
 function prediction(match) {
+  const override = predictionOverrides.find(item => item.matchId === match.id);
+  if (override?.probabilities) return override.probabilities;
+
   const odds = getCurrentOdds(match.id);
   const inverse = { HOME: 1 / odds.HOME, DRAW: 1 / odds.DRAW, AWAY: 1 / odds.AWAY };
   const total = inverse.HOME + inverse.DRAW + inverse.AWAY;
@@ -241,13 +271,17 @@ function renderTeams() {
 }
 
 function renderStandings() {
-  const groups = ['A', 'B', 'C', 'D', 'E'];
+  const groups = standingsGroups.length ? standingsGroups : ['A', 'B', 'C', 'D', 'E'].map(group => ({
+    group: `Group ${group}`,
+    rows: teams.filter(team => team[1] === group).map((team, index) => ({ team: team[0], played: index + 1, win: index ? 0 : 1, draw: index ? 1 : 0, loss: 0, points: index ? 1 : 3 }))
+  }));
+
   $('standings-content').innerHTML = groups.map(group => `
     <article class="standing-card">
-      <strong>Group ${group}</strong>
+      <strong>${group.group}</strong>
       <div class="standing-row text-secondary"><span>Team</span><b>场</b><b>胜</b><b>平</b><b>负</b><b>分</b></div>
-      ${teams.filter(team => team[1] === group).map((team, index) => `
-        <div class="standing-row"><span>${team[0]}</span><b>${index + 1}</b><b>${index ? 0 : 1}</b><b>${index ? 1 : 0}</b><b>0</b><b>${index ? 1 : 3}</b></div>
+      ${group.rows.map(row => `
+        <div class="standing-row"><span>${row.team}</span><b>${row.played}</b><b>${row.win}</b><b>${row.draw}</b><b>${row.loss}</b><b>${row.points}</b></div>
       `).join('')}
     </article>
   `).join('');
@@ -336,7 +370,8 @@ async function renderMyBets() {
 
 async function renderBettingPool() {
   const { bets } = await apiRequest('/api/bets/pool');
-  $('total-pool-points').textContent = `${bets.reduce((sum, bet) => sum + bet.stake, 0)} PTS`;
+  const externalTotal = externalPools.reduce((sum, bet) => sum + Number(bet.stake || bet.amount || 0), 0);
+  $('total-pool-points').textContent = `${bets.reduce((sum, bet) => sum + bet.stake, 0)} PTS 本站 / ${externalTotal} PTS 外部`;
   $('betting-pool').innerHTML = demoMatches.map(match => {
     const matchBets = bets.filter(bet => bet.matchId === match.id);
     const total = matchBets.reduce((sum, bet) => sum + bet.stake, 0);
@@ -345,7 +380,8 @@ async function renderBettingPool() {
       const pct = total ? Math.round((amount / total) * 100) : 0;
       return `<div class="pool-option"><span>${moneylineLabel(selection)}</span><div class="progress"><div class="progress-bar bg-warning" style="width:${pct}%"></div></div><small>${amount} PTS · ${pct}%</small></div>`;
     }).join('');
-    return `<article class="pool-card"><div class="d-flex justify-content-between"><strong>${match.home} vs ${match.away}</strong><span>${total} PTS</span></div>${options}</article>`;
+    const externalTotal = externalPools.filter(bet => bet.matchId === match.id).reduce((sum, bet) => sum + Number(bet.stake || bet.amount || 0), 0);
+    return `<article class="pool-card"><div class="d-flex justify-content-between"><strong>${match.home} vs ${match.away}</strong><span>${total} PTS 本站 · ${externalTotal} PTS 外部</span></div>${options}</article>`;
   }).join('');
 }
 
@@ -447,6 +483,7 @@ function handleBodyClick(event) {
 
 async function boot() {
   await restoreSession();
+  await loadFifa2026Data();
   renderMatchSelect();
   await renderAllDynamic();
 

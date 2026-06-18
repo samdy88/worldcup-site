@@ -8,6 +8,103 @@ const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data', 'db.json');
 const CARD_WEBHOOK_SECRET = process.env.CARD_WEBHOOK_SECRET || 'dev-card-secret';
 const STARTING_POINTS = 500;
 
+
+const demoMatches = [
+  { id: 'wc2026-001', date: '2026-06-11', time: '20:00', home: 'Mexico', away: 'South Africa', group: 'Group A', venue: 'Estadio Azteca', status: 'soon', score: '0 - 0' },
+  { id: 'wc2026-002', date: '2026-06-12', time: '18:00', home: 'Canada', away: 'Japan', group: 'Group B', venue: 'BMO Field', status: 'soon', score: '0 - 0' },
+  { id: 'wc2026-003', date: '2026-06-13', time: '21:00', home: 'United States', away: 'Germany', group: 'Group C', venue: 'MetLife Stadium', status: 'live', score: '1 - 1' },
+  { id: 'wc2026-004', date: '2026-06-14', time: '17:00', home: 'Brazil', away: 'Morocco', group: 'Group D', venue: 'SoFi Stadium', status: 'soon', score: '0 - 0' },
+  { id: 'wc2026-005', date: '2026-06-15', time: '19:30', home: 'Argentina', away: 'Spain', group: 'Group E', venue: 'AT&T Stadium', status: 'soon', score: '0 - 0' },
+  { id: 'wc2026-final', date: '2026-07-19', time: '19:00', home: 'TBD Finalist 1', away: 'TBD Finalist 2', group: 'Final', venue: 'MetLife Stadium', status: 'future', score: '0 - 0' }
+];
+
+const demoTeams = [
+  ['Mexico', 'A', 84, 'S. Giménez'], ['South Africa', 'A', 72, 'P. Tau'], ['Canada', 'B', 79, 'A. Davies'],
+  ['Japan', 'B', 82, 'K. Mitoma'], ['United States', 'C', 81, 'C. Pulisic'], ['Germany', 'C', 88, 'J. Musiala'],
+  ['Brazil', 'D', 91, 'Vinícius Jr.'], ['Morocco', 'D', 83, 'A. Hakimi'], ['Argentina', 'E', 90, 'L. Messi'], ['Spain', 'E', 89, 'Pedri']
+];
+
+const demoOdds = {
+  'wc2026-001': { HOME: 1.86, DRAW: 3.35, AWAY: 4.20 }, 'wc2026-002': { HOME: 2.18, DRAW: 3.10, AWAY: 3.05 },
+  'wc2026-003': { HOME: 2.45, DRAW: 3.40, AWAY: 2.62 }, 'wc2026-004': { HOME: 1.72, DRAW: 3.85, AWAY: 5.20 },
+  'wc2026-005': { HOME: 2.55, DRAW: 3.25, AWAY: 2.70 }, 'wc2026-final': { HOME: 2.05, DRAW: 3.25, AWAY: 3.45 }
+};
+
+function demoStandings() {
+  return ['A', 'B', 'C', 'D', 'E'].map(group => ({
+    group: `Group ${group}`,
+    rows: demoTeams.filter(team => team[1] === group).map((team, index) => ({ team: team[0], played: index + 1, win: index ? 0 : 1, draw: index ? 1 : 0, loss: 0, points: index ? 1 : 3 }))
+  }));
+}
+
+function buildDemoPredictions() {
+  return demoMatches.map(match => ({ matchId: match.id, probabilities: impliedProbabilities(demoOdds[match.id] || { HOME: 2, DRAW: 3.2, AWAY: 3.4 }) }));
+}
+
+function impliedProbabilities(odds) {
+  const inverse = { HOME: 1 / odds.HOME, DRAW: 1 / odds.DRAW, AWAY: 1 / odds.AWAY };
+  const total = inverse.HOME + inverse.DRAW + inverse.AWAY;
+  return { HOME: Math.round((inverse.HOME / total) * 100), DRAW: Math.round((inverse.DRAW / total) * 100), AWAY: Math.round((inverse.AWAY / total) * 100) };
+}
+
+async function fetchJson(url, options = {}) {
+  const response = await fetch(url, options);
+  if (!response.ok) throw new Error(`Provider ${url} returned ${response.status}`);
+  return response.json();
+}
+
+async function getFixturesData() {
+  if (!process.env.API_SPORTS_KEY) return { source: 'demo', matches: demoMatches };
+  const payload = await fetchJson('https://v3.football.api-sports.io/fixtures?league=1&season=2026', { headers: { 'x-apisports-key': process.env.API_SPORTS_KEY } });
+  const matches = (payload.response || []).map(item => ({
+    id: String(item.fixture.id), date: (item.fixture.date || '').slice(0, 10), time: (item.fixture.date || '').slice(11, 16),
+    home: item.teams.home.name, away: item.teams.away.name, group: item.league.round || 'FIFA 2026', venue: item.fixture.venue?.name || 'TBD',
+    status: item.fixture.status?.short === 'NS' ? 'soon' : 'live', score: `${item.goals.home ?? 0} - ${item.goals.away ?? 0}`
+  }));
+  return { source: 'api-sports', matches: matches.length ? matches : demoMatches };
+}
+
+async function getTeamsData() {
+  return { source: process.env.API_SPORTS_KEY ? 'api-sports-ready' : 'demo', teams: demoTeams };
+}
+
+async function getStandingsData() {
+  return { source: process.env.API_SPORTS_KEY ? 'api-sports-ready' : 'demo', standings: demoStandings() };
+}
+
+async function getOddsData() {
+  if (!process.env.ODDS_API_KEY) return { source: 'demo', oddsByMatchId: demoOdds };
+  const sport = process.env.ODDS_API_SPORT_KEY || 'soccer_fifa_world_cup';
+  const url = `https://api.the-odds-api.com/v4/sports/${sport}/odds/?apiKey=${process.env.ODDS_API_KEY}&regions=us,eu&markets=h2h&oddsFormat=decimal`;
+  const payload = await fetchJson(url);
+  const oddsByMatchId = { ...demoOdds };
+  for (const match of demoMatches) {
+    const market = payload.find(item => [item.home_team, item.away_team].includes(match.home) && [item.home_team, item.away_team].includes(match.away));
+    const outcomes = market?.bookmakers?.[0]?.markets?.find(item => item.key === 'h2h')?.outcomes || [];
+    const home = outcomes.find(item => item.name === match.home)?.price;
+    const away = outcomes.find(item => item.name === match.away)?.price;
+    const draw = outcomes.find(item => item.name === 'Draw')?.price;
+    if (home && away && draw) oddsByMatchId[match.id] = { HOME: home, DRAW: draw, AWAY: away };
+  }
+  return { source: 'the-odds-api', oddsByMatchId };
+}
+
+async function getExternalPoolsData(db) {
+  if (process.env.EXTERNAL_POOL_API_URL) {
+    const payload = await fetchJson(process.env.EXTERNAL_POOL_API_URL);
+    return { source: 'external', pools: payload.pools || payload };
+  }
+  return { source: 'local', pools: db.bets };
+}
+
+async function getPredictionsData() {
+  if (process.env.PREDICTION_API_URL) {
+    const payload = await fetchJson(process.env.PREDICTION_API_URL);
+    return { source: 'world-2026-prediction-model', predictions: payload.predictions || payload };
+  }
+  return { source: 'demo-model', predictions: buildDemoPredictions() };
+}
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -99,6 +196,13 @@ async function handleApi(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
 
   try {
+    if (req.method === 'GET' && url.pathname === '/api/fixtures') return sendJson(res, 200, await getFixturesData());
+    if (req.method === 'GET' && url.pathname === '/api/teams') return sendJson(res, 200, await getTeamsData());
+    if (req.method === 'GET' && url.pathname === '/api/standings') return sendJson(res, 200, await getStandingsData());
+    if (req.method === 'GET' && url.pathname === '/api/odds') return sendJson(res, 200, await getOddsData());
+    if (req.method === 'GET' && url.pathname === '/api/external-pools') return sendJson(res, 200, await getExternalPoolsData(db));
+    if (req.method === 'GET' && url.pathname === '/api/predictions') return sendJson(res, 200, await getPredictionsData());
+
     if (req.method === 'POST' && url.pathname === '/api/auth/register') {
       const body = await parseBody(req);
       const name = String(body.name || '').trim();
@@ -232,5 +336,5 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   ensureDb();
-  console.log(`WorldCup betting site running at http://localhost:${PORT}`);
+  console.log(`PredictWin running at http://localhost:${PORT}`);
 });
