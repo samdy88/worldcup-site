@@ -185,3 +185,88 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+.schedule-list,
+.teams-grid,
+.predictions-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.schedule-card,
+.team-card,
+.prediction-card {
+  border: 1px solid #334155;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.72));
+  padding: 1rem;
+}
+
+.schedule-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.schedule-card h3 {
+  font-size: 1.05rem;
+  margin: 0.5rem 0 0.25rem;
+}
+
+.schedule-card h3 span {
+  color: var(--gold);
+  font-size: 0.85rem;
+}
+
+.schedule-card p {
+  color: #94a3b8;
+  margin: 0;
+}
+
+.score-box {
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  color: var(--gold);
+  font-weight: 800;
+  min-width: 6rem;
+  padding: 0.65rem;
+  text-align: center;
+}
+
+.teams-grid,
+.predictions-grid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.form-line {
+  display: flex;
+  gap: 0.35rem;
+  margin: 0.75rem 0;
+}
+
+.form-line span {
+  border-radius: 999px;
+  display: inline-grid;
+  font-size: 0.75rem;
+  font-weight: 800;
+  height: 1.7rem;
+  place-items: center;
+  width: 1.7rem;
+}
+
+.form-W { background: #16a34a; color: white; }
+.form-D { background: #ca8a04; color: #111; }
+.form-L { background: #dc2626; color: white; }
+
+.metric {
+  display: grid;
+  grid-template-columns: 3rem 1fr;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.table-dark {
+  --bs-table-bg: transparent;
+}

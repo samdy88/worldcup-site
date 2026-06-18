@@ -20,7 +20,9 @@
       <div class="collapse navbar-collapse" id="mainNav">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item"><a class="nav-link active" href="#home" data-route="home">赛程/比分</a></li>
+          <li class="nav-item"><a class="nav-link" href="#teams" data-route="teams">球队</a></li>
           <li class="nav-item"><a class="nav-link" href="#standings" data-route="standings">排行榜</a></li>
+          <li class="nav-item"><a class="nav-link" href="#predictions" data-route="predictions">预测</a></li>
           <li class="nav-item"><a class="nav-link" href="#pool" data-route="pool">投注池</a></li>
           <li class="nav-item"><a class="nav-link" href="#my-bets" data-route="my-bets">我的投注</a></li>
           <li class="nav-item"><a class="nav-link" href="#compliance" data-route="compliance">合规说明</a></li>
@@ -64,7 +66,9 @@
         <section class="col-lg-5">
           <div id="games-list" class="app-card widget-shell">
             <div class="section-title">赛程 / 比分</div>
-            <div id="games-widget-container">
+            <div id="schedule-list" class="schedule-list"></div>
+            <div class="mt-3 small text-secondary">下方保留第三方赛程组件，生产环境可替换为后端聚合数据。</div>
+            <div id="games-widget-container" class="mt-2">
               <api-sports-widget data-type="games"></api-sports-widget>
             </div>
           </div>
@@ -72,11 +76,12 @@
 
         <aside class="col-lg-4">
           <div class="app-card">
-            <div class="section-title">🔥 实时赔率与预测</div>
+            <div class="d-flex justify-content-between align-items-center"><div class="section-title">🔥 实时赔率与预测</div><button class="btn btn-sm btn-outline-warning" id="refresh-odds">刷新赔率</button></div>
             <label for="match-select" class="form-label small text-secondary">选择比赛</label>
             <select id="match-select" class="form-select form-select-sm mb-3"></select>
             <div id="selected-match-card" class="selected-match mb-3"></div>
-            <div id="odds-panel" class="odds-grid mb-3"></div>
+            <div id="odds-panel" class="odds-grid mb-2"></div>
+            <div id="odds-updated" class="small text-secondary mb-3"></div>
             <div class="input-group input-group-sm mb-3">
               <span class="input-group-text">投注积分</span>
               <input id="stake-input" type="number" min="1" step="1" value="10" class="form-control" />
@@ -92,10 +97,25 @@
       </div>
     </section>
 
+    <section class="route-page d-none" data-page="teams">
+      <div class="app-card">
+        <div class="section-title">球队</div>
+        <div id="teams-grid" class="teams-grid"></div>
+      </div>
+    </section>
+
     <section class="route-page d-none" data-page="standings">
       <div class="row g-3">
-        <div class="col-lg-8"><div class="app-card widget-shell"><div class="section-title">世界杯排行榜</div><div id="standings-content"></div></div></div>
-        <div class="col-lg-4"><div class="app-card widget-shell"><div class="section-title">球队资料</div><div id="team-content"></div></div></div>
+        <div class="col-lg-8"><div class="app-card"><div class="section-title">世界杯排行榜</div><div id="standings-table"></div></div></div>
+        <div class="col-lg-4"><div class="app-card widget-shell"><div class="section-title">官方球队资料组件</div><div id="team-content"></div></div></div>
+      </div>
+    </section>
+
+    <section class="route-page d-none" data-page="predictions">
+      <div class="app-card">
+        <div class="section-title">AI 预测</div>
+        <p class="small text-secondary">基于球队强度、近期状态、排名和主场因子生成的演示预测，生产环境可接入 Python 模型输出或后端 API。</p>
+        <div id="predictions-grid" class="predictions-grid"></div>
       </div>
     </section>
 
