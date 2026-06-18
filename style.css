@@ -1,31 +1,187 @@
+:root {
+  --maroon: #8a1538;
+  --gold: #eebe6c;
+  --panel: #1e293b;
+  --panel-border: #334155;
+  --bg: #0f172a;
+}
+
 body {
-    margin:0;
+  margin: 0;
+  background: radial-gradient(circle at top, #1e1b4b 0, var(--bg) 42%, #020617 100%);
+  color: #e2e8f0;
 }
 
 .container-fluid,
 .content {
-    max-width: 1440px;
-    margin: auto;
+  max-width: 1440px;
+  margin: auto;
 }
 
-#game-content {
-    position: sticky;
-    top: 70px;
-    overflow-y: auto;
+.header {
+  background: rgba(30, 27, 75, 0.96) !important;
+  border-bottom: 2px solid var(--gold);
+  backdrop-filter: blur(10px);
+}
+
+.navbar-brand {
+  font-weight: 900;
+  color: var(--gold) !important;
+  letter-spacing: 0.04em;
+}
+
+.nav-link.active,
+.nav-link:hover {
+  color: var(--gold) !important;
+}
+
+.search-input {
+  min-width: 230px;
+}
+
+.app-card {
+  background: rgba(30, 41, 59, 0.94);
+  border: 1px solid var(--panel-border);
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(2, 6, 23, 0.25);
+  padding: 1rem;
+}
+
+.section-title {
+  color: var(--gold);
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.75rem;
+}
+
+.widget-shell api-sports-widget {
+  display: block;
+  width: 100%;
+  min-height: 200px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.btn-maroon,
+.btn-gold {
+  border: 0;
+  font-weight: 700;
+}
+
+.btn-maroon {
+  background: var(--maroon) !important;
+  color: white !important;
+}
+
+.btn-gold {
+  background: var(--gold) !important;
+  color: #111 !important;
+}
+
+#game-content,
+#leagues-list {
+  position: sticky;
+  top: 84px;
+  overflow-y: auto;
 }
 
 #game-content api-sports-widget {
-    max-height: calc(100vh - 100px);
+  max-height: calc(100vh - 150px);
 }
 
-#standings-content api-sports-widget,
-#team-content api-sports-widget {
-    margin-bottom: 1rem;
-    max-height: 55vh;
+.odds-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
 }
 
-#leagues-list {
-    position: sticky;
-    top: 70px;
-    overflow-y: auto;
+.odds-button,
+.result-card {
+  border: 1px solid #475569;
+  background: #0f172a;
+  color: #f8fafc;
+  border-radius: 14px;
+  padding: 0.85rem;
+  text-align: left;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.odds-button:hover,
+.result-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--gold);
+}
+
+.odds-button strong {
+  display: block;
+  color: var(--gold);
+  font-size: 1.4rem;
+}
+
+.selected-match,
+.bet-row,
+.pool-card,
+.empty-state {
+  border: 1px solid #334155;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.72);
+  padding: 0.85rem;
+}
+
+.match-title {
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+.result-grid,
+.bets-list,
+.pool-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.result-card span {
+  display: block;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.bet-row {
+  display: grid;
+  grid-template-columns: 2fr repeat(5, auto);
+  align-items: center;
+  gap: 1rem;
+}
+
+.pool-option {
+  display: grid;
+  grid-template-columns: 3rem 1fr 6rem;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.progress {
+  height: 0.5rem;
+  background: #020617;
+}
+
+.compliance-list li {
+  margin-bottom: 0.6rem;
+}
+
+@media (max-width: 992px) {
+  #game-content,
+  #leagues-list {
+    position: static;
+  }
+
+  .bet-row,
+  .pool-option {
+    grid-template-columns: 1fr;
+  }
+
+  .odds-grid {
+    grid-template-columns: 1fr;
+  }
 }

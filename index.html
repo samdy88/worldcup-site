@@ -1,222 +1,143 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
-
+<html lang="zh-CN" data-bs-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>2026 FIFA-Dream Football</title>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
-    crossorigin="anonymous"></script>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet"
-    integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous" />
+  <title>2026 FIFA Dream Football</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous" />
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
   <script type="module" crossorigin src="https://widgets.api-sports.io/3.1.0/widgets.js"></script>
-  
-  <style>
-    /* 1. 直接在此補齊 style.css 的核心佈局，防止框架高度塌陷、數據擠壓 */
-    body { background-color: #0f172a !important; }
-    .header { background-color: #1e1b4b !important; border-bottom: 2px solid #eebe6c; }
-    .navbar-brand { font-weight: 900; color: #eebe6c !important; }
-    .card { background-color: #1e293b !important; border: 1px solid #334155 !important; margin-bottom: 15px; min-height: 100px; }
-    api-sports-widget { display: block; width: 100%; min-height: 200px; max-height: 70vh; overflow-y: auto; }
-    .btn-maroon { background-color: #8a1538 !important; color: white !important; }
-    .btn-gold { background-color: #eebe6c !important; color: #111 !important; font-weight: bold; }
-  </style>
+  <script defer src="./app.js"></script>
 </head>
-
 <body>
-  <nav class="header navbar navbar-expand-lg bg-body-tertiary sticky-top">
+  <nav class="header navbar navbar-expand-lg sticky-top">
     <div class="container-fluid">
-      <a class="navbar-brand" href="/">WIN！</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
-        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <a class="navbar-brand" href="#home">WIN 2026</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
-      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <div class="collapse navbar-collapse" id="mainNav">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item"><a class="nav-link active" data-sport="football" href="#">Football</a></li>
-          <li class="nav-item"><a class="nav-link" data-sport="baseball" href="#">Baseball</a></li>
-          <li class="nav-item"><a class="nav-link" data-sport="basketball" href="#">Basketball</a></li>
-          <li class="nav-item"><a class="nav-link" data-sport="handball" href="#">Handball</a></li>
-          <li class="nav-item"><a class="nav-link" data-sport="hockey" href="#">Hockey</a></li>
-          <li class="nav-item"><a class="nav-link" data-sport="rugby" href="#">Rugby</a></li>
-          <li class="nav-item"><a class="nav-link" data-sport="volleyball" href="#">Volleyball</a></li>
+          <li class="nav-item"><a class="nav-link active" href="#home" data-route="home">赛程/比分</a></li>
+          <li class="nav-item"><a class="nav-link" href="#standings" data-route="standings">排行榜</a></li>
+          <li class="nav-item"><a class="nav-link" href="#pool" data-route="pool">投注池</a></li>
+          <li class="nav-item"><a class="nav-link" href="#my-bets" data-route="my-bets">我的投注</a></li>
+          <li class="nav-item"><a class="nav-link" href="#compliance" data-route="compliance">合规说明</a></li>
         </ul>
-        <!-- 在您的導覽列右側加入動態積分看版 -->
-        <span class="navbar-text text-warning font-monospace fs-5 me-3">
-          PTS: <span id="user-points" class="fw-bold text-white">0</span>
-        </span>
+        <form class="d-flex me-3" role="search" id="search-form">
+          <input id="site-search" class="form-control form-control-sm search-input" type="search" placeholder="搜索球队 / 比赛 / 日期" aria-label="搜索球队、比赛或日期" autocomplete="off" />
+        </form>
+        <span class="navbar-text text-warning font-monospace fs-6 me-3">PTS: <span id="user-points" class="fw-bold text-white">0</span></span>
+        <button class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#authModal" id="auth-button">登录 / 注册</button>
       </div>
     </div>
   </nav>
 
-  <div class="content p-3">
-    <div class="row">
+  <main class="content p-3">
+    <section id="compliance-banner" class="alert alert-warning border-warning" role="alert">
+      <strong>合规边界：</strong>当前版本仅实现模拟积分投注技巧原型，不提供真钱下注、提现或现金网博流程。任何卡密购买、现金兑换、派奖或客服提现能力必须在取得适用司法辖区牌照、KYC/AML、年龄验证与法律审查后由服务端实现。
+    </section>
 
-      <div class="col-3">
-        <div id="leagues-list" class="card text-bg-dark border-dark">
-          <div class="card-body p-0">
+    <section id="search-results" class="app-card d-none" aria-live="polite">
+      <div class="section-title">搜索结果</div>
+      <div id="search-results-list" class="result-grid"></div>
+    </section>
+
+    <section class="route-page" data-page="home">
+      <div class="row g-3">
+        <aside class="col-lg-3">
+          <div id="leagues-list" class="app-card widget-shell">
+            <div class="section-title">联赛 / 赛事</div>
             <api-sports-widget data-type="leagues"></api-sports-widget>
           </div>
-        </div>
-
-        <!-- 完美插入在左側下方的卡密儲值模組 -->
-        <div class="card text-bg-dark border-dark p-3">
-          <h6 class="text-warning">🔑 CARD RECHARGE</h6>
-          <div class="input-group input-group-sm">
-            <input type="text" id="card-code" class="form-control bg-dark text-white border-secondary" placeholder="Card Password">
-            <button class="btn btn-gold" onclick="redeemCard()">REDEEM</button>
+          <div class="app-card mt-3">
+            <div class="section-title">🔑 卡密积分充值</div>
+            <p class="small text-secondary mb-2">仅用于模拟积分；现金兑换功能未实现。</p>
+            <div class="input-group input-group-sm">
+              <input type="text" id="card-code" class="form-control bg-dark text-white border-secondary" placeholder="Card Password" />
+              <button class="btn btn-gold" id="redeem-card">REDEEM</button>
+            </div>
           </div>
-        </div>
-      </div>
+        </aside>
 
-      <div class="col-5">
-        <div id="games-list" class="card text-bg-dark border-dark">
-          <div class="card-body p-0">
-            <div id="games-list">
+        <section class="col-lg-5">
+          <div id="games-list" class="app-card widget-shell">
+            <div class="section-title">赛程 / 比分</div>
+            <div id="games-widget-container">
               <api-sports-widget data-type="games"></api-sports-widget>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <div class="col-4">
-
-        <!-- 完美插入在右側頂部的積分投注操控模組 -->
-        <div class="card text-bg-dark border-dark p-3">
-          <h6 class="text-info">🔥 BETTING PREDICTION (10 PTS/BET)</h6>
-          <div class="d-flex justify-content-between">
-            <button class="btn btn-sm btn-maroon w-100 me-1" onclick="placePointsBet('HOME WIN')">HOME</button>
-            <button class="btn btn-sm btn-secondary w-100 me-1" onclick="placePointsBet('DRAW')">DRAW</button>
-            <button class="btn btn-sm btn-primary w-100" onclick="placePointsBet('AWAY WIN')">AWAY</button>
+        <aside class="col-lg-4">
+          <div class="app-card">
+            <div class="section-title">🔥 实时赔率与预测</div>
+            <label for="match-select" class="form-label small text-secondary">选择比赛</label>
+            <select id="match-select" class="form-select form-select-sm mb-3"></select>
+            <div id="selected-match-card" class="selected-match mb-3"></div>
+            <div id="odds-panel" class="odds-grid mb-3"></div>
+            <div class="input-group input-group-sm mb-3">
+              <span class="input-group-text">投注积分</span>
+              <input id="stake-input" type="number" min="1" step="1" value="10" class="form-control" />
+            </div>
+            <div class="small text-secondary">下注时会保存比赛、选项、赔率快照和投注积分，可在“我的投注”查看。</div>
           </div>
-        </div>
 
-        <!-- Start Dynamic Targeting containers -->
-        <div class="card text-bg-dark border-dark">
-          <div class="card-body p-0">
-            <div id="standings-content"></div>
-          </div>
-        </div>
-        <div class="card text-bg-dark border-dark">
-          <div class="card-body p-0">
-            <div id="team-content"></div>
-          </div>
-        </div>
-        <!-- End Dynamic Targeting containers -->
-
-        <!-- 【核心修正】補上您原始碼漏掉的 </div> 閉合標籤，並將比賽 ID 改為目前的 2026 實時賽事 -->
-        <div id="game-content" class="card text-bg-dark border-dark">
-          <div class="card-body p-0">
+          <div id="game-content" class="app-card widget-shell mt-3">
+            <div class="section-title">比赛详情</div>
             <api-sports-widget data-type="game" data-game-id="1037231"></api-sports-widget>
           </div>
-        </div>
-
+        </aside>
       </div>
+    </section>
 
-    </div>
+    <section class="route-page d-none" data-page="standings">
+      <div class="row g-3">
+        <div class="col-lg-8"><div class="app-card widget-shell"><div class="section-title">世界杯排行榜</div><div id="standings-content"></div></div></div>
+        <div class="col-lg-4"><div class="app-card widget-shell"><div class="section-title">球队资料</div><div id="team-content"></div></div></div>
+      </div>
+    </section>
+
+    <section class="route-page d-none" data-page="pool">
+      <div class="app-card">
+        <div class="d-flex justify-content-between align-items-center mb-3"><div class="section-title mb-0">投注池</div><button class="btn btn-sm btn-outline-warning" id="refresh-pool">刷新</button></div>
+        <div id="betting-pool" class="pool-list"></div>
+      </div>
+    </section>
+
+    <section class="route-page d-none" data-page="my-bets">
+      <div class="app-card">
+        <div class="d-flex justify-content-between align-items-center mb-3"><div class="section-title mb-0">我的投注</div><button class="btn btn-sm btn-outline-danger" id="clear-bets">清空本地记录</button></div>
+        <div id="my-bets-list" class="bets-list"></div>
+      </div>
+    </section>
+
+    <section class="route-page d-none" data-page="compliance">
+      <div class="app-card">
+        <div class="section-title">合规与产品边界</div>
+        <ul class="compliance-list">
+          <li>本原型不实现现金网博、提现、现金兑换、派奖或客服兑付流程。</li>
+          <li>如果未来涉及用户购买卡密后兑换积分并在赛后兑现金，必须先取得目标地区博彩/抽奖/金融相关法律意见和必要牌照。</li>
+          <li>生产版本需要年龄验证、KYC/AML、地理位置限制、风控、交易审计、负责任博彩提示和争议处理流程。</li>
+          <li>前端积分仅供演示，不可作为真实余额；真实余额必须由服务端数据库和交易流水控制。</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-content">
+      <div class="modal-header"><h1 class="modal-title fs-5" id="authModalLabel">登录 / 注册</h1><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <p class="small text-secondary">当前为本地演示账号。生产环境应接入服务端鉴权。</p>
+        <input id="auth-name" class="form-control mb-2" placeholder="用户名" />
+        <input id="auth-email" type="email" class="form-control" placeholder="邮箱" />
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-gold" id="save-profile" data-bs-dismiss="modal">保存本地账号</button></div>
+    </div></div>
   </div>
 
-  <!-- Config widget (完整保留您的真實 Key 與 BunnyCDN 網址設定) -->
-  <api-sports-widget 
-    data-type="config" 
-    data-sport="football" 
-    data-key="a5f67c885e08bb098a1d202408f4fedd" 
-    data-lang="en"
-    data-url-football="https://fifa-zone.b-cdn.net/"
-    data-theme="grey" 
-    data-show-error="false" 
-    data-show-logos="true" 
-    data-logo-url="https://media.api-sports.io"
-    data-refresh="20" 
-    data-favorite="true"
-    data-player-trophies="true" 
-    data-standings="true" 
-    data-player-injuries="true" 
-    data-team-squad="true"
-    data-team-statistics="true" 
-    data-player-statistics="true" 
-    data-tab="games" 
-    data-game-tab="statistics"
-    data-target-player="modal" 
-    data-target-league="#games-list" 
-    data-target-team="#team-content"
-    data-target-game="#game-content .card-body" 
-    data-target-standings="#standings-content"
-  ></api-sports-widget>
+  <api-sports-widget data-type="config" data-sport="football" data-key="a5f67c885e08bb098a1d202408f4fedd" data-lang="en" data-url-football="https://fifa-zone.b-cdn.net/" data-theme="grey" data-show-error="false" data-show-logos="true" data-logo-url="https://media.api-sports.io" data-refresh="20" data-favorite="true" data-player-trophies="true" data-standings="true" data-player-injuries="true" data-team-squad="true" data-team-statistics="true" data-player-statistics="true" data-tab="games" data-game-tab="statistics" data-target-player="modal" data-target-league="#games-list" data-target-team="#team-content" data-target-game="#game-content" data-target-standings="#standings-content"></api-sports-widget>
 </body>
-
-<!-- 完整保留您的原創官方點擊切換邏輯，並融入卡密與投注腳本 -->
-<script>
-  // 1. 積分讀取初始化
-  let currentPoints = parseInt(localStorage.getItem("user_points")) || 0;
-  document.getElementById("user-points").innerText = currentPoints;
-
-  // 2. 您的原生點擊切換運動項目邏輯
-  document.addEventListener('click', function (event) {
-    if (!event.target.matches('.nav-link')) return
-    event.preventDefault()
-
-    let sport = event.target.getAttribute('data-sport')
-
-    let widget = document.querySelector('api-sports-widget[data-type="config"]');
-            widget.setAttribute('data-sport', sport);
-
-    let leagues = document.querySelector('api-sports-widget[data-type="leagues"]');
-            leagues.innerHTML = ''
-            leagues.setAttribute('data-sport', sport)
-            leagues.connectedCallback()
-
-    let games = document.querySelector('api-sports-widget[data-type="games"]');
-            games.innerHTML = ''
-            games.setAttribute('data-sport', sport)
-            games.connectedCallback()
-
-    let game = document.querySelector('api-sports-widget[data-type="game"]');
-            if(game) {
-               game.innerHTML = ''
-               game.setAttribute('data-sport', sport)
-               game.connectedCallback()
-            }
-
-    window.document.dispatchEvent(new Event("DOMContentLoaded", {
-      bubbles: true,
-      cancelable: true
-    }));
-  });
-
-  // 3. Google 試算表卡密兌換功能
-  async function redeemCard() {
-      const codeInput = document.getElementById("card-code");
-      const code = codeInput.value.trim();
-      if(!code) { alert("Please enter card code!"); return; }
-      
-      // ⚠️ 請在此處換上您的 Google Apps Script 後端網址
-      const gasUrl = "您的_GOOGLE_APPS_SCRIPT_URL"; 
-      try {
-          const response = await fetch(gasUrl, { method: "POST", body: JSON.stringify({ code: code }) });
-          const result = await response.json();
-          if(result.success) {
-              currentPoints += parseInt(result.points);
-              localStorage.setItem("user_points", currentPoints);
-              document.getElementById("user-points").innerText = currentPoints;
-              alert(result.message);
-              codeInput.value = "";
-          } else { alert(result.message); }
-      } catch(e) { alert("Verification timeout. Please check your Google Apps Script URL."); }
-  }
-
-  // 4. 積分投注功能
-  function placePointsBet(prediction) {
-      if(currentPoints < 10) {
-          alert("Insufficient points! Please recharge first.");
-          return;
-      }
-      currentPoints -= 10;
-      localStorage.setItem("user_points", currentPoints);
-      document.getElementById("user-points").innerText = currentPoints;
-      alert("【SUCCESS】10 PTS deducted!\nPrediction: " + prediction);
-  }
-</script>
-
 </html>
