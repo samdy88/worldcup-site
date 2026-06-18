@@ -1,0 +1,287 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* Dark football news theme */
+  --color-pitch: #0a0e1a;
+  --color-pitch-dark: #060912;
+  --color-pitch-light: #111827;
+  --color-gold: #d4af37;
+  --color-gold-light: #e6c85b;
+  --color-gold-dark: #b8962e;
+  --color-card: rgba(255, 255, 255, 0.05);
+  --color-card-hover: rgba(255, 255, 255, 0.08);
+  --color-card-border: rgba(255, 255, 255, 0.08);
+  --color-accent: #3b82f6;
+  --color-accent-light: #60a5fa;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* ── Mobile-first base ─────────────────────────────────── */
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+body {
+  color: #e8eaed;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  min-height: 100dvh; /* dynamic viewport height for mobile browsers */
+  position: relative;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain; /* prevent pull-to-refresh on iOS */
+}
+
+/* Stadium background with overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1920&q=80') center/cover no-repeat,
+    linear-gradient(160deg, #060912 0%, #0a0e1a 30%, #0f1628 60%, #111827 100%);
+  z-index: -2;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgba(6, 9, 18, 0.88) 0%,
+    rgba(10, 14, 26, 0.92) 30%,
+    rgba(10, 14, 26, 0.95) 70%,
+    rgba(6, 9, 18, 0.98) 100%
+  );
+  z-index: -1;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.3);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.5);
+}
+
+/* ── Custom animations ─────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUpMobile {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.3); }
+  50% { box-shadow: 0 0 12px 2px rgba(212, 175, 55, 0.1); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+.animate-pulse-gold {
+  animation: pulse-gold 2s infinite;
+}
+
+/* ── Glass card base ────────────────────────────────────── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+}
+
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ── Gold button ────────────────────────────────────────── */
+.btn-gold {
+  background: linear-gradient(135deg, #d4af37, #e6c85b);
+  color: #0a0e1a;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 8px 20px;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+  letter-spacing: 0.5px;
+}
+.btn-gold:hover {
+  background: linear-gradient(135deg, #e6c85b, #f0d96b);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.35);
+}
+.btn-gold:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── Price button (odds) ────────────────────────────────── */
+.btn-price {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: white;
+  border-radius: 6px;
+  padding: 6px 10px;
+  transition: all 0.15s;
+  cursor: pointer;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-height: 44px; /* iOS touch target minimum */
+}
+.btn-price:hover {
+  background: rgba(212, 175, 55, 0.12);
+  border-color: rgba(212, 175, 55, 0.3);
+  transform: translateY(-1px);
+}
+.btn-price:active {
+  transform: translateY(0);
+  background: rgba(212, 175, 55, 0.18);
+}
+.btn-price.bet-placed {
+  background: rgba(212, 175, 55, 0.12);
+  border-color: rgba(212, 175, 55, 0.35);
+}
+
+/* ── Pitch pattern ──────────────────────────────────────── */
+.pitch-pattern {
+  background-image:
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 60px,
+      rgba(255, 255, 255, 0.01) 60px,
+      rgba(255, 255, 255, 0.01) 120px
+    );
+}
+
+/* ── Live indicator ─────────────────────────────────────── */
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: pulse-gold 1.5s infinite;
+  display: inline-block;
+}
+
+/* ── Rules tooltip / guide ──────────────────────────────── */
+.rules-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 10px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  color: rgba(147, 197, 253, 0.8);
+  cursor: help;
+  position: relative;
+}
+
+.rules-badge:hover .rules-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.rules-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: rgba(15, 23, 42, 0.97);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+  min-width: 220px;
+  max-width: 300px;
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+
+.rules-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(59, 130, 246, 0.25);
+}
+
+/* ── Mobile input: prevent iOS zoom ─────────────────────── */
+/* iOS Safari auto-zooms when input font-size < 16px */
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="email"],
+select,
+textarea {
+  font-size: 16px;
+}
+
+/* ── Bottom nav safe area (iPhone notch / home bar) ─────── */
+.bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Hide scrollbar on tournament tabs (mobile) */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Mobile modal: slide from bottom ────────────────────── */
+@media (max-width: 640px) {
+  .mobile-sheet {
+    animation: slideUpMobile 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    border-radius: 16px 16px 0 0;
+    max-height: 90dvh;
+    overflow-y: auto;
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+}
