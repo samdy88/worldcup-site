@@ -58,7 +58,7 @@
       </header>
 
       <section id="compliance-banner" class="notice" role="alert">
-        <strong>演示说明：</strong>用户现在可以直接注册、登录并开始使用模拟积分投注。当前仍仅为前端演示，不提供真钱下注、提现、现金兑换或派奖；生产化需接入服务端鉴权、结算、KYC/AML、年龄验证、地域限制和风控。
+        <strong>演示说明：</strong>当前版本已包含 Node 后端与 JSON 数据库：用户可注册登录、通过第三方发卡平台取得卡密并兑换模拟积分下注。仍不提供提现、现金兑换或派奖；生产化需完成牌照、KYC/AML、年龄验证、地域限制和风控。
       </section>
 
       <section id="guest-gate" class="guest-gate">
@@ -184,7 +184,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <p class="small text-secondary">登录后输入 <strong>DEMO-2026</strong> 可获得 100 模拟积分。</p>
+          <p class="small text-secondary">在第三方发卡平台购买卡密后，在这里输入卡密兑换积分。演示可用 <strong>DEMO-2026</strong> 或通过发卡平台 webhook 写入新卡密。</p>
           <div class="input-group">
             <input type="text" id="card-code" class="form-control" placeholder="DEMO-2026" />
             <button class="btn btn-gold" id="redeem-card">REDEEM</button>

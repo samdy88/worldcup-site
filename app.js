@@ -1,9 +1,8 @@
 const STORAGE_KEYS = {
-  accounts: 'fifa2026_accounts',
-  currentUser: 'fifa2026_current_user',
-  globalBets: 'fifa2026_global_bets'
+  token: 'fifa2026_api_token'
 };
 
+const API_BASE = '';
 const STARTING_POINTS = 500;
 
 const demoMatches = [
@@ -42,49 +41,29 @@ let selectedMatchId = demoMatches[0].id;
 
 const $ = id => document.getElementById(id);
 
-function readJson(key, fallback) {
-  try {
-    return JSON.parse(localStorage.getItem(key)) ?? fallback;
-  } catch {
-    return fallback;
-  }
+async function apiRequest(path, options = {}) {
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  const token = localStorage.getItem(STORAGE_KEYS.token);
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || '服务器请求失败。');
+  return payload;
 }
 
-function writeJson(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+function saveToken(token) {
+  localStorage.setItem(STORAGE_KEYS.token, token);
 }
 
-function normalizeEmail(email) {
-  return email.trim().toLowerCase();
-}
-
-function getAccounts() {
-  return readJson(STORAGE_KEYS.accounts, {});
-}
-
-function saveAccounts(accounts) {
-  writeJson(STORAGE_KEYS.accounts, accounts);
-}
-
-function persistCurrentUser(user) {
-  currentUser = user;
-  localStorage.setItem(STORAGE_KEYS.currentUser, user.email);
-  const accounts = getAccounts();
-  accounts[user.email] = user;
-  saveAccounts(accounts);
-}
-
-function getGlobalBets() {
-  return readJson(STORAGE_KEYS.globalBets, []);
-}
-
-function saveGlobalBets(bets) {
-  writeJson(STORAGE_KEYS.globalBets, bets);
+function clearToken() {
+  localStorage.removeItem(STORAGE_KEYS.token);
 }
 
 function moneylineLabel(selection) {
   return { HOME: '主胜', DRAW: '平局', AWAY: '客胜' }[selection] || selection;
 }
+
 
 function requireLogin(actionText = '请先注册或登录后再继续。') {
   if (currentUser) return true;
@@ -120,77 +99,67 @@ function updateUserChrome() {
   $('user-points').textContent = loggedIn ? currentUser.points : 0;
 }
 
-function adjustPoints(delta) {
-  currentUser.points += delta;
-  persistCurrentUser(currentUser);
-  updateUserChrome();
-}
-
-function registerUser(event) {
+async function registerUser(event) {
   event.preventDefault();
   hideAuthMessage();
 
-  const name = $('register-name').value.trim();
-  const email = normalizeEmail($('register-email').value);
-  const password = $('register-password').value;
-  const confirmedAge = $('register-age').checked;
-
-  if (name.length < 2) return showAuthMessage('用户名至少需要 2 个字符。', 'error');
-  if (!email.includes('@')) return showAuthMessage('请输入有效邮箱。', 'error');
-  if (password.length < 6) return showAuthMessage('密码至少需要 6 位。', 'error');
-  if (!confirmedAge) return showAuthMessage('请先确认年龄与演示说明。', 'error');
-
-  const accounts = getAccounts();
-  if (accounts[email]) return showAuthMessage('该邮箱已注册，请直接登录。', 'error');
-
-  const user = {
-    id: `user-${Date.now()}`,
-    name,
-    email,
-    password,
-    points: STARTING_POINTS,
-    bets: [],
-    createdAt: new Date().toISOString()
-  };
-
-  persistCurrentUser(user);
-  updateUserChrome();
-  renderAllDynamic();
-  showAuthMessage(`注册成功！已发放 ${STARTING_POINTS} PTS。`, 'success');
-  setTimeout(() => bootstrap.Modal.getInstance($('authModal'))?.hide(), 650);
-}
-
-function loginUser(event) {
-  event.preventDefault();
-  hideAuthMessage();
-
-  const email = normalizeEmail($('login-email').value);
-  const password = $('login-password').value;
-  const user = getAccounts()[email];
-
-  if (!user || user.password !== password) {
-    return showAuthMessage('邮箱或密码不正确。', 'error');
+  try {
+    const payload = await apiRequest('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: $('register-name').value.trim(),
+        email: $('register-email').value.trim(),
+        password: $('register-password').value,
+        ageConfirmed: $('register-age').checked
+      })
+    });
+    currentUser = payload.user;
+    saveToken(payload.token);
+    updateUserChrome();
+    await renderAllDynamic();
+    showAuthMessage(`注册成功！已发放 ${STARTING_POINTS} PTS。`, 'success');
+    setTimeout(() => bootstrap.Modal.getInstance($('authModal'))?.hide(), 650);
+  } catch (error) {
+    showAuthMessage(error.message, 'error');
   }
-
-  currentUser = user;
-  localStorage.setItem(STORAGE_KEYS.currentUser, email);
-  updateUserChrome();
-  renderAllDynamic();
-  showAuthMessage(`欢迎回来，${user.name}！`, 'success');
-  setTimeout(() => bootstrap.Modal.getInstance($('authModal'))?.hide(), 650);
 }
 
-function logoutUser() {
+async function loginUser(event) {
+  event.preventDefault();
+  hideAuthMessage();
+
+  try {
+    const payload = await apiRequest('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email: $('login-email').value.trim(), password: $('login-password').value })
+    });
+    currentUser = payload.user;
+    saveToken(payload.token);
+    updateUserChrome();
+    await renderAllDynamic();
+    showAuthMessage(`欢迎回来，${currentUser.name}！`, 'success');
+    setTimeout(() => bootstrap.Modal.getInstance($('authModal'))?.hide(), 650);
+  } catch (error) {
+    showAuthMessage(error.message, 'error');
+  }
+}
+
+async function logoutUser() {
+  try { await apiRequest('/api/auth/logout', { method: 'POST' }); } catch {}
   currentUser = null;
-  localStorage.removeItem(STORAGE_KEYS.currentUser);
+  clearToken();
   updateUserChrome();
-  renderAllDynamic();
+  await renderAllDynamic();
 }
 
-function restoreSession() {
-  const email = localStorage.getItem(STORAGE_KEYS.currentUser);
-  const user = email ? getAccounts()[email] : null;
-  currentUser = user || null;
+async function restoreSession() {
+  try {
+    const payload = await apiRequest('/api/auth/me');
+    currentUser = payload.user;
+  } catch {
+    currentUser = null;
+    clearToken();
+  }
   updateUserChrome();
 }
 
@@ -310,7 +279,7 @@ function renderPrediction() {
   $('top-pick').textContent = best;
 }
 
-function placeBet(selection, matchId = selectedMatchId) {
+async function placeBet(selection, matchId = selectedMatchId) {
   if (!requireLogin('请先注册/登录，领取模拟积分后即可投注。')) return;
 
   const stake = Number.parseInt($('stake-input').value, 10);
@@ -319,10 +288,7 @@ function placeBet(selection, matchId = selectedMatchId) {
 
   const match = demoMatches.find(item => item.id === matchId);
   const odds = getCurrentOdds(matchId);
-  const bet = {
-    id: `bet-${Date.now()}`,
-    userEmail: currentUser.email,
-    userName: currentUser.name,
+  const betPayload = {
     matchId: match.id,
     matchLabel: `${match.home} vs ${match.away}`,
     matchDate: match.date,
@@ -330,38 +296,46 @@ function placeBet(selection, matchId = selectedMatchId) {
     selectionLabel: moneylineLabel(selection),
     stake,
     odds: odds[selection],
-    potentialReturn: Number((stake * odds[selection]).toFixed(2)),
-    status: 'pending',
-    createdAt: new Date().toISOString()
+    potentialReturn: Number((stake * odds[selection]).toFixed(2))
   };
 
-  currentUser.bets.unshift(bet);
-  adjustPoints(-stake);
-
-  const globalBets = getGlobalBets();
-  globalBets.unshift(bet);
-  saveGlobalBets(globalBets);
-
-  renderAllDynamic();
-  alert(`投注成功：${bet.matchLabel} · ${bet.selectionLabel} @ ${bet.odds}`);
+  try {
+    const payload = await apiRequest('/api/bets', { method: 'POST', body: JSON.stringify(betPayload) });
+    currentUser = payload.user;
+    updateUserChrome();
+    await renderAllDynamic();
+    alert(`投注成功：${betPayload.matchLabel} · ${betPayload.selectionLabel} @ ${betPayload.odds}`);
+  } catch (error) {
+    alert(error.message);
+  }
 }
 
-function renderMyBets() {
-  const bets = currentUser?.bets || [];
-  $('my-bets-list').innerHTML = bets.length ? bets.map(bet => `
-    <article class="bet-row">
-      <div><strong>${bet.matchLabel}</strong><div class="small text-secondary">${bet.matchDate} · ${new Date(bet.createdAt).toLocaleString()}</div></div>
-      <div>${bet.selectionLabel}</div>
-      <div>${bet.stake} PTS</div>
-      <div>@ ${Number(bet.odds).toFixed(2)}</div>
-      <div class="text-warning">预计返还 ${bet.potentialReturn}</div>
-      <span class="badge text-bg-secondary">${bet.status}</span>
-    </article>
-  `).join('') : '<div class="empty-state">暂无投注记录。注册登录后，选择比赛和赔率即可保存到这里。</div>';
+async function renderMyBets() {
+  const container = $('my-bets-list');
+  if (!currentUser) {
+    container.innerHTML = '<div class="empty-state">暂无投注记录。注册登录后，选择比赛和赔率即可保存到这里。</div>';
+    return;
+  }
+
+  try {
+    const { bets } = await apiRequest('/api/bets/me');
+    container.innerHTML = bets.length ? bets.map(bet => `
+      <article class="bet-row">
+        <div><strong>${bet.matchLabel}</strong><div class="small text-secondary">${bet.matchDate} · ${new Date(bet.createdAt).toLocaleString()}</div></div>
+        <div>${bet.selectionLabel}</div>
+        <div>${bet.stake} PTS</div>
+        <div>@ ${Number(bet.odds).toFixed(2)}</div>
+        <div class="text-warning">预计返还 ${bet.potentialReturn}</div>
+        <span class="badge text-bg-secondary">${bet.status}</span>
+      </article>
+    `).join('') : '<div class="empty-state">暂无投注记录。选择比赛和赔率后即可保存到这里。</div>';
+  } catch (error) {
+    container.innerHTML = `<div class="empty-state">${error.message}</div>`;
+  }
 }
 
-function renderBettingPool() {
-  const bets = getGlobalBets();
+async function renderBettingPool() {
+  const { bets } = await apiRequest('/api/bets/pool');
   $('total-pool-points').textContent = `${bets.reduce((sum, bet) => sum + bet.stake, 0)} PTS`;
   $('betting-pool').innerHTML = demoMatches.map(match => {
     const matchBets = bets.filter(bet => bet.matchId === match.id);
@@ -410,33 +384,41 @@ function showRoute(route) {
   document.querySelectorAll('[data-route]').forEach(link => link.classList.toggle('active', link.dataset.route === route));
 }
 
-function redeemCard() {
+async function redeemCard() {
   if (!requireLogin('请先注册/登录后再充值模拟积分。')) return;
   const code = $('card-code').value.trim();
-  if (!/^DEMO-2026$/i.test(code)) return alert('演示环境仅接受 DEMO-2026。');
-  adjustPoints(100);
-  $('card-code').value = '';
-  bootstrap.Modal.getInstance($('walletModal'))?.hide();
-  alert('演示卡密兑换成功：+100 PTS。');
+  try {
+    const payload = await apiRequest('/api/cards/redeem', { method: 'POST', body: JSON.stringify({ code }) });
+    currentUser = payload.user;
+    updateUserChrome();
+    $('card-code').value = '';
+    bootstrap.Modal.getInstance($('walletModal'))?.hide();
+    alert(`卡密兑换成功：+${payload.card.points} PTS。`);
+  } catch (error) {
+    alert(error.message);
+  }
 }
 
-function clearMyBets() {
+async function clearMyBets() {
   if (!requireLogin()) return;
-  if (!confirm('确定清空当前账号的投注记录？投注池历史不会删除。')) return;
-  currentUser.bets = [];
-  persistCurrentUser(currentUser);
-  renderMyBets();
+  if (!confirm('确定清空当前账号的投注记录？')) return;
+  try {
+    await apiRequest('/api/bets/me', { method: 'DELETE' });
+    await renderAllDynamic();
+  } catch (error) {
+    alert(error.message);
+  }
 }
 
-function renderAllDynamic() {
+async function renderAllDynamic() {
   renderSelectedMatch();
   renderOdds();
   renderMatches();
   renderTeams();
   renderStandings();
   renderPrediction();
-  renderMyBets();
-  renderBettingPool();
+  await renderMyBets();
+  await renderBettingPool();
   renderLiveOdds();
 }
 
@@ -463,10 +445,10 @@ function handleBodyClick(event) {
   if (odd) placeBet(odd.dataset.selection, odd.dataset.matchId || selectedMatchId);
 }
 
-function boot() {
-  restoreSession();
+async function boot() {
+  await restoreSession();
   renderMatchSelect();
-  renderAllDynamic();
+  await renderAllDynamic();
 
   $('match-select').addEventListener('change', event => {
     selectedMatchId = event.target.value;
@@ -478,7 +460,7 @@ function boot() {
   $('login-pane').addEventListener('submit', loginUser);
   $('logout-button').addEventListener('click', logoutUser);
   $('redeem-card').addEventListener('click', redeemCard);
-  $('refresh-pool').addEventListener('click', renderBettingPool);
+  $('refresh-pool').addEventListener('click', () => renderBettingPool());
   $('clear-bets').addEventListener('click', clearMyBets);
   document.body.addEventListener('click', handleBodyClick);
   setInterval(() => {

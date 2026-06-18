@@ -1,186 +1,94 @@
-# WorldCup2026
+# FIFA 2026 Betting Arena
 
-Personal FIFA World Cup 2026 betting intelligence system — daily AI-generated reports, live odds tracking, Poisson model predictions, and a browser dashboard. Built for DraftKings with $1–20 straight bets and $1–5 parlays.
+这是一个 FIFA 2026 投注网站原型，已经从纯静态页面升级为“前端 + Node 后端 + JSON 数据库”的可运行演示。
 
-**Tournament:** June 11 – July 19, 2026 | USA / Mexico / Canada
+> 合规说明：当前仅演示模拟积分、卡密兑换与下注流程，不提供真钱下注、提现、现金兑换或派奖。真实上线前需要完成目标地区法律审查、牌照、KYC/AML、年龄验证、地域限制、风控与交易审计。
 
----
+## 功能
 
-## Prerequisites
+- 用户注册 / 登录 / 退出
+- 服务端 session token
+- JSON 文件数据库：用户、session、投注、卡密
+- 赛程、比分、球队、排行榜、实时赔率、预测、投注池、我的投注、搜索
+- 用户通过第三方发卡平台购买卡密后，在网站兑换为积分
+- 后端卡密兑换接口会校验卡密是否存在、是否已兑换，并给当前用户加积分
+- 发卡平台可通过 webhook/API 写入新卡密
 
-- Python 3.12
-- Git
-- API accounts (all free tiers are sufficient):
-  - [The Odds API](https://the-odds-api.com) — DraftKings live odds
-  - [API-Sports](https://api-sports.io) — fixtures, scores, injuries, standings
-  - [Anthropic](https://console.anthropic.com) — Claude API for report generation
-  - [Resend](https://resend.com) — email delivery
-  - [TheStatsAPI](https://www.thestatsapi.com) — xG and historical data (7-day trial, run data_collector.py once during trial)
-
----
-
-## Setup
+## 快速启动
 
 ```bash
-git clone https://github.com/levijb/WorldCup2026.git
-cd WorldCup2026
-pip install -r requirements.txt
+npm start
 ```
 
-Copy `.env.example` to `.env` and fill in your API keys:
+默认访问：<http://localhost:4173>
+
+首次启动会自动创建 `data/db.json`。该文件包含真实运行数据，已加入 `.gitignore`。
+
+## 环境变量
+
+复制 `.env.example` 后按部署环境设置：
 
 ```bash
-cp .env.example .env
-# Edit .env with your keys
+PORT=4173
+DB_PATH=./data/db.json
+CARD_WEBHOOK_SECRET=replace-with-third-party-webhook-secret
 ```
 
-Also update `data/subscribers.json` with your email address.
+## 发卡平台接入方式
 
----
+### 1. 发卡平台售出卡密后回调本站
 
-## Usage
-
-### Morning Report (manual run)
+让发卡平台在订单支付成功后调用：
 
 ```bash
-python agent/morning_report.py              # full run — fetches data, calls Claude, emails, git pushes
-python agent/morning_report.py --no-email   # skip email
-python agent/morning_report.py --no-push    # skip git commit/push
-python agent/morning_report.py --dry-run    # print prompt only, no Claude call
+curl -X POST http://localhost:4173/api/card-platform/cards \
+  -H 'Content-Type: application/json' \
+  -H 'x-card-platform-secret: replace-with-third-party-webhook-secret' \
+  -d '{
+    "code": "ORDER-ABC-123",
+    "points": 1000,
+    "orderId": "third-party-order-10001",
+    "buyerEmail": "buyer@example.com"
+  }'
 ```
 
-### Live Query (before or during a match)
+服务端会把卡密写入数据库，状态为 `active`。
+
+### 2. 用户在网站兑换卡密
+
+前端会调用：
+
+```http
+POST /api/cards/redeem
+Authorization: Bearer <session-token>
+Content-Type: application/json
+
+{ "code": "ORDER-ABC-123" }
+```
+
+成功后：
+
+- 卡密状态变为 `redeemed`
+- 记录 `redeemedBy` 和 `redeemedAt`
+- 用户积分增加对应 `points`
+
+## 主要 API
+
+| Method | Path | 说明 |
+| --- | --- | --- |
+| `POST` | `/api/auth/register` | 注册用户并发放 500 PTS |
+| `POST` | `/api/auth/login` | 登录并返回 token |
+| `GET` | `/api/auth/me` | 获取当前登录用户 |
+| `POST` | `/api/auth/logout` | 退出登录 |
+| `POST` | `/api/card-platform/cards` | 发卡平台写入新卡密 |
+| `POST` | `/api/cards/redeem` | 用户兑换卡密为积分 |
+| `GET` | `/api/bets/pool` | 获取全站投注池 |
+| `GET` | `/api/bets/me` | 获取我的投注 |
+| `POST` | `/api/bets` | 下单投注并扣除积分 |
+| `DELETE` | `/api/bets/me` | 清空当前用户投注记录 |
+
+## 检查
 
 ```bash
-python agent/live_query.py                          # all matches today/next 6h
-python agent/live_query.py --match "Brazil vs Morocco"  # specific match
-python agent/live_query.py --match "Spain vs France" --save  # save to reports/
-```
-
-### Dashboard
-
-Open `dashboard/index.html` in a browser. On first load, enter your The Odds API key (stored in localStorage). The page auto-refreshes odds every 5 minutes.
-
-Open `dashboard/tournament.html` for the group stage table and knockout bracket.
-
-### Add a Subscriber
-
-Edit `data/subscribers.json`:
-
-```json
-{
-  "subscribers": [
-    { "name": "Me", "email": "you@example.com", "active": true },
-    { "name": "Friend", "email": "friend@example.com", "active": true }
-  ]
-}
-```
-
----
-
-## GitHub Actions (Automated Daily Reports)
-
-Add these secrets to your repo at **Settings → Secrets → Actions**:
-
-| Secret | Source |
-|--------|--------|
-| `THE_ODDS_API_KEY` | The Odds API dashboard |
-| `API_SPORTS_KEY` | API-Sports dashboard |
-| `ANTHROPIC_API_KEY` | Anthropic console |
-| `RESEND_API_KEY` | Resend dashboard |
-| `RESEND_TO_EMAIL` | Your personal email |
-| `STATS_API_KEY` | TheStatsAPI dashboard |
-
-Once secrets are set, the morning report runs automatically at **7:00 AM ET** daily via `.github/workflows/morning-report.yml`. Trigger manually from the **Actions** tab at any time.
-
-For on-demand live queries, use `.github/workflows/manual-trigger.yml` from the Actions tab — enter a match name in the input field.
-
----
-
-## Model Layer (Poisson + Dixon-Coles)
-
-The model uses xG data to predict match outcomes and compute edges vs. DraftKings lines.
-
-### One-time data collection (run during TheStatsAPI 7-day trial)
-
-TheStatsAPI is used **only during the 7-day trial** for bulk historical data collection. After that, daily operations use only The Odds API and API-Sports — `morning_report.py` and `live_query.py` do not call TheStatsAPI.
-
-Confirmed WC 2026 IDs: `competition_id=comp_6107`, `season_id=sn_118868`.
-
-```bash
-# Step 1: Pull team match history (fastest, do this first)
-python model/data_collector.py --teams-only
-
-# Step 2: Pull player stats
-python model/data_collector.py --players
-
-# Step 3: Pull 2018/2022 WC historical data
-python model/data_collector.py --historical
-
-# Step 4: Pull Pinnacle pre-match odds for all WC 2026 fixtures
-python model/data_collector.py --wc-odds
-
-# Step 5: Pull shotmap data for matches with xG available
-python model/data_collector.py --shotmaps
-
-# Step 6: Pull event timelines for finished WC 2026 matches
-python model/data_collector.py --timelines
-
-# Step 7: Pull per-match player stats for all cached matches
-python model/data_collector.py --match-players
-
-# Use --resume to safely re-run without re-fetching already-cached files
-python model/data_collector.py --teams-only --resume
-
-# Dry-run to see the fetch plan without making any API calls
-python model/data_collector.py --dry-run
-```
-
-### Build team ratings (after data collection)
-
-```bash
-python model/poisson_model.py
-```
-
-Ratings saved to `data/processed/team_ratings.json`.
-
-### Run daily predictions
-
-```bash
-python model/predictions.py
-```
-
-Predictions saved to `data/processed/model_predictions.json` and automatically included in the next morning report.
-
----
-
-## File Structure
-
-```
-WorldCup2026/
-├── agent/
-│   ├── system_prompt.md        # Claude system prompt (role, intelligence, formats)
-│   ├── morning_report.py       # Daily report generator
-│   └── live_query.py           # On-demand match query
-├── model/
-│   ├── data_collector.py       # One-time bulk data pull (TheStatsAPI)
-│   ├── poisson_model.py        # xG Poisson + Dixon-Coles model
-│   ├── player_props.py         # Player scorer/SOT/corners model
-│   └── predictions.py          # Daily orchestrator
-├── dashboard/
-│   ├── index.html              # Odds, bets, reports dashboard
-│   └── tournament.html         # Group table + knockout bracket
-├── data/
-│   ├── bets.json               # Bet log (edit manually)
-│   ├── subscribers.json        # Email subscribers
-│   ├── odds_cache.json         # Yesterday's odds cache (gitignored)
-│   ├── raw/                    # Raw API data (gitignored, ~1GB after collection)
-│   └── processed/              # Model outputs (committed)
-├── reports/                    # Daily .md reports (auto-committed by Actions)
-├── .github/workflows/
-│   ├── morning-report.yml      # Cron: 7 AM ET daily
-│   └── manual-trigger.yml      # workflow_dispatch with match_focus input
-├── .env                        # Local secrets (gitignored)
-├── .env.example                # Key template
-└── requirements.txt
+npm run check
 ```
