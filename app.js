@@ -1,253 +1,34 @@
-const STORAGE_KEYS = {
-  points: 'user_points',
-  bets: 'user_bets',
-  profile: 'user_profile',
-  odds: 'odds_snapshots'
-};
-
-const demoMatches = [
-  { id: 'wc2026-001', date: '2026-06-11', time: '20:00', home: 'Mexico', away: 'South Africa', group: 'Group A', venue: 'Estadio Azteca' },
-  { id: 'wc2026-002', date: '2026-06-12', time: '18:00', home: 'Canada', away: 'Japan', group: 'Group B', venue: 'BMO Field' },
-  { id: 'wc2026-003', date: '2026-06-13', time: '21:00', home: 'United States', away: 'Germany', group: 'Group C', venue: 'MetLife Stadium' },
-  { id: 'wc2026-final', date: '2026-07-19', time: '19:00', home: 'TBD Finalist 1', away: 'TBD Finalist 2', group: 'Final', venue: 'MetLife Stadium' }
-];
-
-const baseOdds = {
-  'wc2026-001': { HOME: 1.86, DRAW: 3.35, AWAY: 4.20 },
-  'wc2026-002': { HOME: 2.18, DRAW: 3.10, AWAY: 3.05 },
-  'wc2026-003': { HOME: 2.45, DRAW: 3.40, AWAY: 2.62 },
-  'wc2026-final': { HOME: 2.05, DRAW: 3.25, AWAY: 3.45 }
-};
-
-let currentPoints = Number.parseInt(localStorage.getItem(STORAGE_KEYS.points), 10) || 100;
-let selectedMatchId = demoMatches[0].id;
-
-function moneylineLabel(selection) {
-  return { HOME: '主胜', DRAW: '平局', AWAY: '客胜' }[selection] || selection;
-}
-
-function readJson(key, fallback) {
-  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
-}
-
-function writeJson(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
-}
-
-function updatePoints(nextPoints = currentPoints) {
-  currentPoints = nextPoints;
-  localStorage.setItem(STORAGE_KEYS.points, String(currentPoints));
-  document.getElementById('user-points').innerText = currentPoints;
-}
-
-function getCurrentOdds(matchId) {
-  const snapshots = readJson(STORAGE_KEYS.odds, {});
-  if (snapshots[matchId]) return snapshots[matchId];
-
-  const seed = baseOdds[matchId] || { HOME: 2, DRAW: 3.2, AWAY: 3.4 };
-  const drift = (Date.now() % 7) / 100;
-  const odds = {
-    HOME: Number((seed.HOME + drift).toFixed(2)),
-    DRAW: Number((seed.DRAW + drift / 2).toFixed(2)),
-    AWAY: Number((seed.AWAY - drift / 2).toFixed(2)),
-    updatedAt: new Date().toISOString(),
-    source: 'demo-aggregator'
-  };
-  snapshots[matchId] = odds;
-  writeJson(STORAGE_KEYS.odds, snapshots);
-  return odds;
-}
-
-function renderMatchSelect() {
-  const select = document.getElementById('match-select');
-  select.innerHTML = demoMatches.map(match => `<option value="${match.id}">${match.date} ${match.home} vs ${match.away}</option>`).join('');
-  select.value = selectedMatchId;
-}
-
-function renderSelectedMatch() {
-  const match = demoMatches.find(item => item.id === selectedMatchId);
-  const container = document.getElementById('selected-match-card');
-  container.innerHTML = `
-    <div class="match-title">${match.home} vs ${match.away}</div>
-    <div class="small text-secondary">${match.group} · ${match.date} ${match.time} · ${match.venue}</div>
-  `;
-}
-
-function renderOdds() {
-  const odds = getCurrentOdds(selectedMatchId);
-  const container = document.getElementById('odds-panel');
-  container.innerHTML = ['HOME', 'DRAW', 'AWAY'].map(selection => `
-    <button class="odds-button" data-selection="${selection}">
-      <span>${moneylineLabel(selection)}</span>
-      <strong>${odds[selection].toFixed(2)}</strong>
-    </button>
-  `).join('');
-}
-
-function placeBet(selection) {
-  const stakeInput = document.getElementById('stake-input');
-  const stake = Number.parseInt(stakeInput.value, 10);
-  if (!Number.isFinite(stake) || stake <= 0) {
-    alert('请输入有效投注积分。');
-    return;
-  }
-  if (currentPoints < stake) {
-    alert('积分不足，请先充值。');
-    return;
-  }
-
-  const match = demoMatches.find(item => item.id === selectedMatchId);
-  const odds = getCurrentOdds(selectedMatchId);
-  const bet = {
-    id: `bet-${Date.now()}`,
-    matchId: match.id,
-    matchLabel: `${match.home} vs ${match.away}`,
-    matchDate: match.date,
-    selection,
-    selectionLabel: moneylineLabel(selection),
-    stake,
-    odds: odds[selection],
-    potentialReturn: Number((stake * odds[selection]).toFixed(2)),
-    status: 'pending',
-    createdAt: new Date().toISOString()
-  };
-
-  const bets = readJson(STORAGE_KEYS.bets, []);
-  bets.unshift(bet);
-  writeJson(STORAGE_KEYS.bets, bets);
-  updatePoints(currentPoints - stake);
-  renderMyBets();
-  renderBettingPool();
-  alert(`投注成功：${bet.matchLabel} · ${bet.selectionLabel} @ ${bet.odds}`);
-}
-
-function renderMyBets() {
-  const bets = readJson(STORAGE_KEYS.bets, []);
-  const container = document.getElementById('my-bets-list');
-  if (!bets.length) {
-    container.innerHTML = '<div class="empty-state">暂无投注记录。选择比赛和赔率后即可保存到这里。</div>';
-    return;
-  }
-  container.innerHTML = bets.map(bet => `
-    <article class="bet-row">
-      <div><strong>${bet.matchLabel}</strong><div class="small text-secondary">${bet.matchDate} · ${new Date(bet.createdAt).toLocaleString()}</div></div>
-      <div>${bet.selectionLabel}</div>
-      <div>${bet.stake} PTS</div>
-      <div>@ ${Number(bet.odds).toFixed(2)}</div>
-      <div class="text-warning">预计返还 ${bet.potentialReturn}</div>
-      <span class="badge text-bg-secondary">${bet.status}</span>
-    </article>
-  `).join('');
-}
-
-function renderBettingPool() {
-  const bets = readJson(STORAGE_KEYS.bets, []);
-  const container = document.getElementById('betting-pool');
-  const rows = demoMatches.map(match => {
-    const matchBets = bets.filter(bet => bet.matchId === match.id);
-    const total = matchBets.reduce((sum, bet) => sum + bet.stake, 0);
-    const bySelection = ['HOME', 'DRAW', 'AWAY'].map(selection => {
-      const amount = matchBets.filter(bet => bet.selection === selection).reduce((sum, bet) => sum + bet.stake, 0);
-      const pct = total ? Math.round((amount / total) * 100) : 0;
-      return `<div class="pool-option"><span>${moneylineLabel(selection)}</span><div class="progress"><div class="progress-bar bg-warning" style="width:${pct}%"></div></div><small>${amount} PTS · ${pct}%</small></div>`;
-    }).join('');
-    return `<article class="pool-card"><div class="d-flex justify-content-between"><strong>${match.home} vs ${match.away}</strong><span>${total} PTS</span></div><div class="small text-secondary mb-2">${match.date} · ${match.group}</div>${bySelection}</article>`;
-  });
-  container.innerHTML = rows.join('');
-}
-
-function renderSearchResults(query) {
-  const shell = document.getElementById('search-results');
-  const list = document.getElementById('search-results-list');
-  const normalized = query.trim().toLowerCase();
-  if (!normalized) {
-    shell.classList.add('d-none');
-    return;
-  }
-  const matches = demoMatches.filter(match => [match.home, match.away, match.date, match.group, match.venue].some(value => value.toLowerCase().includes(normalized)));
-  shell.classList.remove('d-none');
-  list.innerHTML = matches.length ? matches.map(match => `
-    <button class="result-card" data-match-id="${match.id}">
-      <strong>${match.home} vs ${match.away}</strong>
-      <span>${match.date} ${match.time} · ${match.group}</span>
-    </button>
-  `).join('') : '<div class="empty-state">没有找到相关球队或比赛。</div>';
-}
-
-function showRoute(route) {
-  document.querySelectorAll('.route-page').forEach(page => page.classList.toggle('d-none', page.dataset.page !== route));
-  document.querySelectorAll('[data-route]').forEach(link => link.classList.toggle('active', link.dataset.route === route));
-}
-
-function redeemCard() {
-  const codeInput = document.getElementById('card-code');
-  const code = codeInput.value.trim();
-  if (!code) {
-    alert('请输入卡密。');
-    return;
-  }
-  if (!/^DEMO-\d{4}$/i.test(code)) {
-    alert('演示环境仅接受 DEMO-2026 格式卡密；生产环境请接入服务端卡密校验。');
-    return;
-  }
-  updatePoints(currentPoints + 100);
-  codeInput.value = '';
-  alert('演示卡密兑换成功：+100 PTS。');
-}
-
-function saveProfile() {
-  const profile = {
-    name: document.getElementById('auth-name').value.trim() || 'Demo User',
-    email: document.getElementById('auth-email').value.trim(),
-    savedAt: new Date().toISOString()
-  };
-  writeJson(STORAGE_KEYS.profile, profile);
-  document.getElementById('auth-button').innerText = profile.name;
-}
-
-function boot() {
-  updatePoints(currentPoints);
-  const profile = readJson(STORAGE_KEYS.profile, null);
-  if (profile?.name) document.getElementById('auth-button').innerText = profile.name;
-  renderMatchSelect();
-  renderSelectedMatch();
-  renderOdds();
-  renderMyBets();
-  renderBettingPool();
-
-  document.getElementById('match-select').addEventListener('change', event => {
-    selectedMatchId = event.target.value;
-    renderSelectedMatch();
-    renderOdds();
-  });
-  document.getElementById('odds-panel').addEventListener('click', event => {
-    const button = event.target.closest('[data-selection]');
-    if (button) placeBet(button.dataset.selection);
-  });
-  document.getElementById('site-search').addEventListener('input', event => renderSearchResults(event.target.value));
-  document.getElementById('search-results-list').addEventListener('click', event => {
-    const card = event.target.closest('[data-match-id]');
-    if (!card) return;
-    selectedMatchId = card.dataset.matchId;
-    document.getElementById('match-select').value = selectedMatchId;
-    renderSelectedMatch();
-    renderOdds();
-    showRoute('home');
-  });
-  document.querySelectorAll('[data-route]').forEach(link => link.addEventListener('click', event => {
-    event.preventDefault();
-    showRoute(link.dataset.route);
-  }));
-  document.getElementById('redeem-card').addEventListener('click', redeemCard);
-  document.getElementById('refresh-pool').addEventListener('click', renderBettingPool);
-  document.getElementById('clear-bets').addEventListener('click', () => {
-    if (confirm('确定清空本地投注记录？')) {
-      writeJson(STORAGE_KEYS.bets, []);
-      renderMyBets();
-      renderBettingPool();
-    }
-  });
-  document.getElementById('save-profile').addEventListener('click', saveProfile);
-}
-
-document.addEventListener('DOMContentLoaded', boot);
+const STORAGE_KEYS={points:'user_points',bets:'user_bets',profile:'user_profile',odds:'odds_snapshots'};
+const demoMatches=[
+{id:'wc2026-001',date:'2026-06-11',time:'20:00',home:'Mexico',away:'South Africa',group:'Group A',venue:'Estadio Azteca',status:'soon',score:'0 - 0'},
+{id:'wc2026-002',date:'2026-06-12',time:'18:00',home:'Canada',away:'Japan',group:'Group B',venue:'BMO Field',status:'soon',score:'0 - 0'},
+{id:'wc2026-003',date:'2026-06-13',time:'21:00',home:'United States',away:'Germany',group:'Group C',venue:'MetLife Stadium',status:'live',score:'1 - 1'},
+{id:'wc2026-004',date:'2026-06-14',time:'17:00',home:'Brazil',away:'Morocco',group:'Group D',venue:'SoFi Stadium',status:'soon',score:'0 - 0'},
+{id:'wc2026-005',date:'2026-06-15',time:'19:30',home:'Argentina',away:'Spain',group:'Group E',venue:'AT&T Stadium',status:'soon',score:'0 - 0'},
+{id:'wc2026-final',date:'2026-07-19',time:'19:00',home:'TBD Finalist 1',away:'TBD Finalist 2',group:'Final',venue:'MetLife Stadium',status:'future',score:'0 - 0'}];
+const teams=[['Mexico','A',84,'S. Giménez'],['South Africa','A',72,'P. Tau'],['Canada','B',79,'A. Davies'],['Japan','B',82,'K. Mitoma'],['United States','C',81,'C. Pulisic'],['Germany','C',88,'J. Musiala'],['Brazil','D',91,'Vinícius Jr.'],['Morocco','D',83,'A. Hakimi'],['Argentina','E',90,'L. Messi'],['Spain','E',89,'Pedri']];
+const baseOdds={'wc2026-001':{HOME:1.86,DRAW:3.35,AWAY:4.20},'wc2026-002':{HOME:2.18,DRAW:3.10,AWAY:3.05},'wc2026-003':{HOME:2.45,DRAW:3.40,AWAY:2.62},'wc2026-004':{HOME:1.72,DRAW:3.85,AWAY:5.2},'wc2026-005':{HOME:2.55,DRAW:3.25,AWAY:2.7},'wc2026-final':{HOME:2.05,DRAW:3.25,AWAY:3.45}};
+let currentPoints=Number.parseInt(localStorage.getItem(STORAGE_KEYS.points),10)||100;let selectedMatchId=demoMatches[0].id;
+const $=id=>document.getElementById(id);const readJson=(k,f)=>{try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}};const writeJson=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+function label(s){return{HOME:'主胜',DRAW:'平局',AWAY:'客胜'}[s]||s}function updatePoints(n=currentPoints){currentPoints=n;localStorage.setItem(STORAGE_KEYS.points,String(n));$('user-points').innerText=n}
+function getCurrentOdds(id){const seed=baseOdds[id]||{HOME:2,DRAW:3.2,AWAY:3.4};const wave=((Date.now()/20000)%1-.5)/8;return{HOME:+(seed.HOME+wave).toFixed(2),DRAW:+(seed.DRAW-wave/2).toFixed(2),AWAY:+(seed.AWAY-wave).toFixed(2),updatedAt:new Date().toISOString()}}
+function prediction(match){const o=getCurrentOdds(match.id);const inv={HOME:1/o.HOME,DRAW:1/o.DRAW,AWAY:1/o.AWAY};const sum=inv.HOME+inv.DRAW+inv.AWAY;return{HOME:Math.round(inv.HOME/sum*100),DRAW:Math.round(inv.DRAW/sum*100),AWAY:Math.round(inv.AWAY/sum*100)}}
+function renderMatchSelect(){ $('match-select').innerHTML=demoMatches.map(m=>`<option value="${m.id}">${m.date} ${m.home} vs ${m.away}</option>`).join('');$('match-select').value=selectedMatchId}
+function renderSelectedMatch(){const m=demoMatches.find(x=>x.id===selectedMatchId);$('selected-match-card').innerHTML=`<div class="team-name">${m.home} vs ${m.away}</div><div class="small text-secondary">${m.group} · ${m.date} ${m.time} · ${m.venue}</div>`;$('hero-match-title').innerText=`${m.home} vs ${m.away}`;$('hero-match-meta').innerText=`${m.group} · ${m.date} ${m.time} · ${m.venue}`;[$('hero-home-score').innerText,$('hero-away-score').innerText]=m.score.split(' - ')}
+function oddsButtons(id,cls='odds-button'){const o=getCurrentOdds(id);return['HOME','DRAW','AWAY'].map(s=>`<button class="${cls}" data-selection="${s}" data-match-id="${id}"><span>${label(s)}</span><strong>${o[s].toFixed(2)}</strong></button>`).join('')}
+function renderOdds(){$('odds-panel').innerHTML=oddsButtons(selectedMatchId);$('hero-odds').innerHTML=oddsButtons(selectedMatchId,'quick-odd')}
+function renderMatches(){const html=demoMatches.map(m=>`<article class="match-card"><div><div class="team-name">${m.home}</div><small>${m.venue}</small></div><div class="score-pill">${m.score}</div><div><div class="team-name">${m.away}</div><small>${m.group} · ${m.date} ${m.time}</small></div><button class="btn btn-sm btn-outline-warning pick-match" data-match-id="${m.id}">${m.status==='live'?'进入直播':'投注'}</button></article>`).join('');$('featured-matches').innerHTML=html;$('schedule-list').innerHTML=html;$('today-count').innerText=demoMatches.filter(m=>m.date<='2026-06-18').length}
+function renderTeams(){$('teams-grid').innerHTML=teams.map(t=>`<article class="team-card"><small>Group ${t[1]}</small><strong>${t[0]}</strong><p class="mb-2 text-secondary">核心球员：${t[3]}</p><div class="meter"><span style="width:${t[2]}%"></span></div><small>综合实力 ${t[2]}</small></article>`).join('')}
+function renderStandings(){const groups=['A','B','C','D','E'];$('standings-content').innerHTML=groups.map(g=>`<article class="standing-card"><strong>Group ${g}</strong><div class="standing-row text-secondary"><span>Team</span><b>场</b><b>胜</b><b>平</b><b>负</b><b>分</b></div>${teams.filter(t=>t[1]===g).map((t,i)=>`<div class="standing-row"><span>${t[0]}</span><b>${i+1}</b><b>${i?0:1}</b><b>${i?1:0}</b><b>0</b><b>${i?1:3}</b></div>`).join('')}</article>`).join('')}
+function renderPrediction(){let best='--',bestPct=0;$('prediction-board').innerHTML=demoMatches.map(m=>{const p=prediction(m);const top=Object.entries(p).sort((a,b)=>b[1]-a[1])[0];if(top[1]>bestPct){bestPct=top[1];best=`${m.home} ${label(top[0])} ${top[1]}%`}return`<article class="prediction-card"><strong>${m.home} vs ${m.away}</strong>${['HOME','DRAW','AWAY'].map(s=>`<div class="prob-row"><span>${label(s)}</span><div class="meter"><span style="width:${p[s]}%"></span></div><b>${p[s]}%</b></div>`).join('')}<small class="text-warning">推荐：${label(top[0])}</small></article>`}).join('');$('top-pick').innerText=best}
+function placeBet(selection,matchId=selectedMatchId){const stake=Number.parseInt($('stake-input').value,10);if(!Number.isFinite(stake)||stake<=0)return alert('请输入有效投注积分。');if(currentPoints<stake)return alert('积分不足，请先充值。');const m=demoMatches.find(x=>x.id===matchId);const o=getCurrentOdds(matchId);const bet={id:`bet-${Date.now()}`,matchId:m.id,matchLabel:`${m.home} vs ${m.away}`,matchDate:m.date,selection,selectionLabel:label(selection),stake,odds:o[selection],potentialReturn:+(stake*o[selection]).toFixed(2),status:'pending',createdAt:new Date().toISOString()};const bets=readJson(STORAGE_KEYS.bets,[]);bets.unshift(bet);writeJson(STORAGE_KEYS.bets,bets);updatePoints(currentPoints-stake);renderAllDynamic();alert(`投注成功：${bet.matchLabel} · ${bet.selectionLabel} @ ${bet.odds}`)}
+function renderMyBets(){const bets=readJson(STORAGE_KEYS.bets,[]);$('my-bets-list').innerHTML=bets.length?bets.map(b=>`<article class="bet-row"><div><strong>${b.matchLabel}</strong><div class="small text-secondary">${b.matchDate} · ${new Date(b.createdAt).toLocaleString()}</div></div><div>${b.selectionLabel}</div><div>${b.stake} PTS</div><div>@ ${Number(b.odds).toFixed(2)}</div><div class="text-warning">预计返还 ${b.potentialReturn}</div><span class="badge text-bg-secondary">${b.status}</span></article>`).join(''):'<div class="empty-state">暂无投注记录。选择比赛和赔率后即可保存到这里。</div>'}
+function renderBettingPool(){const bets=readJson(STORAGE_KEYS.bets,[]);$('total-pool-points').innerText=`${bets.reduce((s,b)=>s+b.stake,0)} PTS`;$('betting-pool').innerHTML=demoMatches.map(m=>{const mb=bets.filter(b=>b.matchId===m.id),total=mb.reduce((s,b)=>s+b.stake,0);return`<article class="pool-card"><div class="d-flex justify-content-between"><strong>${m.home} vs ${m.away}</strong><span>${total} PTS</span></div>${['HOME','DRAW','AWAY'].map(s=>{const amount=mb.filter(b=>b.selection===s).reduce((x,b)=>x+b.stake,0),pct=total?Math.round(amount/total*100):0;return`<div class="pool-option"><span>${label(s)}</span><div class="progress"><div class="progress-bar bg-warning" style="width:${pct}%"></div></div><small>${amount} PTS · ${pct}%</small></div>`}).join('')}</article>`}).join('')}
+function renderLiveOdds(){$('live-odds-board').innerHTML=demoMatches.map(m=>`<article class="pool-card"><div class="d-flex justify-content-between mb-2"><strong>${m.home} vs ${m.away}</strong><small>${m.date} ${m.time}</small></div><div class="quick-odds">${oddsButtons(m.id,'quick-odd')}</div></article>`).join('')}
+function renderSearchResults(q){const shell=$('search-results'),list=$('search-results-list'),n=q.trim().toLowerCase();if(!n){shell.classList.add('d-none');return}const found=demoMatches.filter(m=>[m.home,m.away,m.date,m.group,m.venue].some(v=>v.toLowerCase().includes(n)));shell.classList.remove('d-none');$('search-count').innerText=`${found.length} 条`;list.innerHTML=found.length?found.map(m=>`<button class="result-card" data-match-id="${m.id}"><strong>${m.home} vs ${m.away}</strong><span>${m.date} ${m.time} · ${m.group} · ${m.venue}</span></button>`).join(''):'<div class="empty-state">没有找到相关球队或比赛。</div>'}
+function showRoute(route){document.querySelectorAll('.route-page').forEach(p=>p.classList.toggle('d-none',p.dataset.page!==route));document.querySelectorAll('[data-route]').forEach(a=>a.classList.toggle('active',a.dataset.route===route))}
+function redeemCard(){const code=$('card-code').value.trim();if(!/^DEMO-2026$/i.test(code))return alert('演示环境仅接受 DEMO-2026。');updatePoints(currentPoints+100);$('card-code').value='';alert('演示卡密兑换成功：+100 PTS。')}
+function saveProfile(){const p={name:$('auth-name').value.trim()||'Demo User',email:$('auth-email').value.trim(),savedAt:new Date().toISOString()};writeJson(STORAGE_KEYS.profile,p);$('auth-button').innerText=p.name}
+function renderAllDynamic(){renderSelectedMatch();renderOdds();renderMatches();renderTeams();renderStandings();renderPrediction();renderMyBets();renderBettingPool();renderLiveOdds()}
+function boot(){updatePoints();const p=readJson(STORAGE_KEYS.profile,null);if(p?.name)$('auth-button').innerText=p.name;renderMatchSelect();renderAllDynamic();$('match-select').addEventListener('change',e=>{selectedMatchId=e.target.value;renderSelectedMatch();renderOdds()});document.body.addEventListener('click',e=>{const route=e.target.closest('[data-route]');if(route){e.preventDefault();showRoute(route.dataset.route)}const pick=e.target.closest('[data-match-id]');if(pick){selectedMatchId=pick.dataset.matchId;if($('match-select'))$('match-select').value=selectedMatchId;renderSelectedMatch();renderOdds();if(pick.classList.contains('pick-match')||pick.classList.contains('result-card'))showRoute('home')}const odd=e.target.closest('[data-selection]');if(odd)placeBet(odd.dataset.selection,odd.dataset.matchId||selectedMatchId)});$('site-search').addEventListener('input',e=>renderSearchResults(e.target.value));$('redeem-card').addEventListener('click',redeemCard);$('refresh-pool').addEventListener('click',renderBettingPool);$('clear-bets').addEventListener('click',()=>{if(confirm('确定清空本地投注记录？')){writeJson(STORAGE_KEYS.bets,[]);renderAllDynamic()}});$('save-profile').addEventListener('click',saveProfile);setInterval(()=>{renderOdds();renderLiveOdds();renderPrediction()},20000)}
+document.addEventListener('DOMContentLoaded',boot);
