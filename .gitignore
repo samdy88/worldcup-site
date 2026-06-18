@@ -1,0 +1,18 @@
+# Reference repo uploads
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+# Dependencies and generated output
+node_modules/
+dist/
+build/
+.next/
+coverage/
+
+# Local OS/editor files
+.DS_Store
+Thumbs.db
