@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Cup 2026 — Morning Reports</title>
+<style>
+  :root {
+    --bg-base: #0d1117;
+    --bg-card: #161b22;
+    --bg-item: #21262d;
+    --border: #30363d;
+    --text-primary: #e6edf3;
+    --text-muted: #8b949e;
+    --text-dim: #6e7681;
+    --accent-blue: #58a6ff;
+    --accent-green: #00c853;
+    --accent-red: #f85149;
+    --accent-amber: #ffab00;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg-base); color: var(--text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; }
+  a { color: var(--accent-blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ── Header ── */
+  .header {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .header-title { color: #fff; font-size: 16px; font-weight: 700; }
+
+  /* ── Page Toggle ── */
+  .page-toggle {
+    display: inline-flex;
+    background: var(--bg-item);
+    border-radius: 8px;
+    padding: 2px;
+    gap: 2px;
+  }
+  .page-toggle a {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--text-muted);
+    transition: color 0.15s, background 0.15s;
+    white-space: nowrap;
+  }
+  .page-toggle a:hover { color: var(--text-primary); }
+  .page-toggle a.active { background: #1f6feb; color: #fff; }
+  .page-toggle svg { flex-shrink: 0; }
+
+  /* ── Content ── */
+  .content { padding: 16px; max-width: 900px; margin: 0 auto; }
+
+  /* ── Card ── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── Reports ── */
+  .report-item { padding: 10px 14px; border-bottom: 1px solid var(--bg-item); }
+  .report-item:last-child { border-bottom: none; }
+  .report-date { color: var(--accent-blue); font-weight: 600; font-size: 14px; }
+  .report-preview { color: var(--text-dim); font-size: 12px; margin-top: 3px; }
+
+  /* ── Loading / Error ── */
+  .loading { color: var(--text-dim); font-style: italic; padding: 20px 14px; }
+  .error-msg {
+    color: var(--accent-red);
+    padding: 12px 14px;
+    font-size: 13px;
+    background: rgba(248, 81, 73, 0.08);
+    border-radius: 4px;
+    margin: 14px;
+  }
+  .error-msg button {
+    margin-left: 10px;
+    background: var(--bg-item);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    border-radius: 4px;
+    padding: 3px 10px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="header-title">World Cup 2026</span>
+  <nav class="page-toggle">
+    <a href="tournament.html">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 2h3v5H2zM11 2h3v5h-3z"/><path d="M5 4.5h6"/><path d="M8 7v3"/><path d="M5 13h6v-3H5z"/>
+      </svg>
+      Tournament
+    </a>
+    <a href="reports.html" class="active" aria-current="page">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 2h7l3 3v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M5 6h6M5 9h6M5 12h4"/>
+      </svg>
+      Reports
+    </a>
+    <a href="index.html">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <rect x="1" y="9" width="3" height="6" rx="1"/><rect x="6" y="5" width="3" height="10" rx="1"/><rect x="11" y="1" width="3" height="14" rx="1"/>
+      </svg>
+      Odds
+    </a>
+  </nav>
+</div>
+
+<div class="content">
+  <div class="card">
+    <div class="card-title">Morning Reports</div>
+    <div id="reports-container"><div class="loading">Loading reports list...</div></div>
+  </div>
+</div>
+
+<script>
+const GITHUB_USER = 'levijb';
+const GITHUB_REPO = 'WorldCup2026';
+
+async function loadReports() {
+  const container = document.getElementById('reports-container');
+  try {
+    const resp = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/reports`);
+    if (resp.status === 403 || resp.status === 429) {
+      container.innerHTML = '<div class="error-msg">GitHub rate limit reached &mdash; try again in a minute.</div>';
+      return;
+    }
+    if (!resp.ok) throw new Error('Could not reach GitHub API');
+    const files = await resp.json();
+    if (!Array.isArray(files)) throw new Error('Unexpected response from GitHub API');
+    const mdFiles = files.filter(f => f.name.endsWith('.md')).sort((a, b) => b.name.localeCompare(a.name));
+    if (!mdFiles.length) {
+      container.innerHTML = '<span style="color:var(--text-dim);display:block;padding:14px;">No reports yet.</span>';
+      return;
+    }
+    const items = await Promise.all(mdFiles.map(async f => {
+      let preview = '';
+      try {
+        const r = await fetch(f.download_url);
+        const text = await r.text();
+        const lines = text.split('\n').filter(l => l.trim() && !l.startsWith('#') && !l.startsWith('_') && !l.startsWith('['));
+        preview = lines[0]?.substring(0, 120) || '';
+      } catch (_) {}
+      return { name: f.name, url: f.html_url, raw: f.download_url, preview };
+    }));
+    container.innerHTML = items.map(f => {
+      const rawDate = f.name.replace('_morning_report.md', '').replace('_live_', ' live ');
+      const dateMatch = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      const date = dateMatch
+        ? new Date(`${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}T12:00:00Z`).toLocaleDateString('en-US',
+            { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' }) + rawDate.slice(dateMatch[0].length)
+        : rawDate;
+      return `<div class="report-item">
+        <div class="report-date"><a href="${f.raw}" target="_blank">${date}</a></div>
+        <div class="report-preview">${f.preview}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    container.innerHTML = `<div class="error-msg">Could not list reports: ${e.message} <button onclick="loadReports()">Retry</button></div>`;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => loadReports());
+</script>
+</body>
+</html>

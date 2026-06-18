@@ -1,55 +1,186 @@
-# 🏆 2026 FIFA 世界盃去中心化積分模擬投注站
+# WorldCup2026
 
-[![License: MIT](https://shields.io)](https://opensource.org)
-[![Platform: Vercel](https://shields.io)](https://vercel.com)
-[![Data Source: API-Sports](https://shields.io)](https://api-sports.io)
+Personal FIFA World Cup 2026 betting intelligence system — daily AI-generated reports, live odds tracking, Poisson model predictions, and a browser dashboard. Built for DraftKings with $1–20 straight bets and $1–5 parlays.
 
-這是一個專為 2026 FIFA 世界盃設計的**高質感即時賽程比分牆與模擬競猜系統**。本專案採用純前端無伺服器（Serverless）架構，完美整合 **API-Sports 官方原生小部件**，並創新型地引入**「卡密驗證機制」**。用戶可透過第三方發卡平台取得卡密並兌換為模擬積分進行下注，成功將金流審查、法律風險與前端託管進行完美切割。
-
-> ⚠️ **合規與免責聲明**：本專案架構完全基於學術研究與技術分享。網頁本身為純前端實作，不涉及、不經手、亦不提供任何法定貨幣或加密貨幣之線上直接儲值與非法博弈管道。
+**Tournament:** June 11 – July 19, 2026 | USA / Mexico / Canada
 
 ---
 
-## ✨ 核心功能特性
+## Prerequisites
 
-- 🔴 **即時賽程看板**：同步 API-Sports 官方數據，世界盃賽事秒級現場即時更新，每 15 秒全自動重新整理。
-- 🎨 **原廠 UI 設計**：頁眉比照 API-Sports 官方後台高質感深色系風格設計，搭配世界盃經典卡達紅（Maroon）與奢華金（Gold）主題。
-- 🔑 **卡密積分系統**：內建「卡號密碼」儲值模組，與外部自動發卡網對接，自動核對並轉換為本地投注點數。
-- 💾 **本地狀態持久化**：使用瀏覽器 `LocalStorage` 技術，用戶無需註冊與登入即可安全保存個人積分餘額。
-- 📱 **響應式斷點設計**：完美支援 Mobile 手機端與 Desktop 電腦端，雙欄 Grid 佈局自動適應螢幕尺寸。
-
----
-
-## 🛠️ 技術棧選型
-
-- **前端託管**：Vercel (免費個人方案，自帶全球 CDN 結點)
-- **體育數據**：API-Sports (Football Widgets v3 引擎)
-- **卡密後端**：Google Apps Script (GAS) API 雲端無伺服器微服務
-- **資料庫**：Google Sheets (雲端試算表充當輕量級卡密資料庫)
+- Python 3.12
+- Git
+- API accounts (all free tiers are sufficient):
+  - [The Odds API](https://the-odds-api.com) — DraftKings live odds
+  - [API-Sports](https://api-sports.io) — fixtures, scores, injuries, standings
+  - [Anthropic](https://console.anthropic.com) — Claude API for report generation
+  - [Resend](https://resend.com) — email delivery
+  - [TheStatsAPI](https://www.thestatsapi.com) — xG and historical data (7-day trial, run data_collector.py once during trial)
 
 ---
 
-## 📐 系統運行架構
+## Setup
 
+```bash
+git clone https://github.com/levijb/WorldCup2026.git
+cd WorldCup2026
+pip install -r requirements.txt
+```
 
-## 2026 投注原型更新说明
+Copy `.env.example` to `.env` and fill in your API keys:
 
-当前前端已从单一比分墙扩展为可维护的多区块应用原型，保留 API-Sports widget 作为赛程、比分、球队与排行榜入口，同时新增以下模块：
+```bash
+cp .env.example .env
+# Edit .env with your keys
+```
 
-- **比赛绑定投注**：用户需要先选择比赛，再选择主胜/平局/客胜赔率下注；下注记录会保存比赛 ID、比赛名称、投注选项、积分、赔率快照、潜在返还与状态。
-- **我的投注**：本地展示所有投注记录，方便后续迁移到服务端数据库。
-- **实时赔率占位层**：参考投注情报/赔率聚合类项目的结构，先以 `demo-aggregator` 生成赔率快照；生产环境应替换为合规赔率 API 或自有服务端聚合接口。
-- **搜索**：导航栏支持按球队、比赛、日期、阶段和场馆搜索演示赛程。
-- **投注池**：按比赛聚合本地投注积分，展示主胜/平局/客胜方向的积分占比。
-- **多页面式信息架构**：使用 hash-like 导航切换“赛程/比分、排行榜、投注池、我的投注、合规说明”，为后续迁移到 Next.js/Vue/React 路由做准备。
-- **登录/注册占位**：当前仅保存本地演示账号；生产版本必须接入后端鉴权和服务端余额。
+Also update `data/subscribers.json` with your email address.
 
-### 参考仓库调研结论
+---
 
-- `samdy88/WorldCu026` 可参考其投注情报系统、赔率跟踪、预测模型和 dashboard 思路，尤其是“赔率缓存 + 报告/预测输出 + dashboard 展示”的分层。
-- `declansx/sports-prediction-market-aggregator` 可参考其“多市场赔率/流动性聚合 + 最优价格选择”的产品思路，但本项目当前只保留演示赔率快照，不接入真实交易路由。
-- `samdy88/wor-bet` 可参考其 World Cup Prediction Game / Virtual Betting Pool 的虚拟投注池方向，本项目当前仅实现本地单用户投注池原型。
+## Usage
 
-### 合规边界
+### Morning Report (manual run)
 
-本仓库当前只允许作为模拟积分原型。用户通过第三方发卡平台购买卡密、兑换积分、下注，并在世界杯决赛后联系客服兑换现金的模式，可能构成受监管博彩、抽奖、支付或金融活动。生产环境不得仅靠前端实现此流程；必须在目标司法辖区完成法律意见、牌照、年龄验证、KYC/AML、地理限制、交易审计、风控与负责任博彩流程后，才可设计任何现金兑付能力。
+```bash
+python agent/morning_report.py              # full run — fetches data, calls Claude, emails, git pushes
+python agent/morning_report.py --no-email   # skip email
+python agent/morning_report.py --no-push    # skip git commit/push
+python agent/morning_report.py --dry-run    # print prompt only, no Claude call
+```
+
+### Live Query (before or during a match)
+
+```bash
+python agent/live_query.py                          # all matches today/next 6h
+python agent/live_query.py --match "Brazil vs Morocco"  # specific match
+python agent/live_query.py --match "Spain vs France" --save  # save to reports/
+```
+
+### Dashboard
+
+Open `dashboard/index.html` in a browser. On first load, enter your The Odds API key (stored in localStorage). The page auto-refreshes odds every 5 minutes.
+
+Open `dashboard/tournament.html` for the group stage table and knockout bracket.
+
+### Add a Subscriber
+
+Edit `data/subscribers.json`:
+
+```json
+{
+  "subscribers": [
+    { "name": "Me", "email": "you@example.com", "active": true },
+    { "name": "Friend", "email": "friend@example.com", "active": true }
+  ]
+}
+```
+
+---
+
+## GitHub Actions (Automated Daily Reports)
+
+Add these secrets to your repo at **Settings → Secrets → Actions**:
+
+| Secret | Source |
+|--------|--------|
+| `THE_ODDS_API_KEY` | The Odds API dashboard |
+| `API_SPORTS_KEY` | API-Sports dashboard |
+| `ANTHROPIC_API_KEY` | Anthropic console |
+| `RESEND_API_KEY` | Resend dashboard |
+| `RESEND_TO_EMAIL` | Your personal email |
+| `STATS_API_KEY` | TheStatsAPI dashboard |
+
+Once secrets are set, the morning report runs automatically at **7:00 AM ET** daily via `.github/workflows/morning-report.yml`. Trigger manually from the **Actions** tab at any time.
+
+For on-demand live queries, use `.github/workflows/manual-trigger.yml` from the Actions tab — enter a match name in the input field.
+
+---
+
+## Model Layer (Poisson + Dixon-Coles)
+
+The model uses xG data to predict match outcomes and compute edges vs. DraftKings lines.
+
+### One-time data collection (run during TheStatsAPI 7-day trial)
+
+TheStatsAPI is used **only during the 7-day trial** for bulk historical data collection. After that, daily operations use only The Odds API and API-Sports — `morning_report.py` and `live_query.py` do not call TheStatsAPI.
+
+Confirmed WC 2026 IDs: `competition_id=comp_6107`, `season_id=sn_118868`.
+
+```bash
+# Step 1: Pull team match history (fastest, do this first)
+python model/data_collector.py --teams-only
+
+# Step 2: Pull player stats
+python model/data_collector.py --players
+
+# Step 3: Pull 2018/2022 WC historical data
+python model/data_collector.py --historical
+
+# Step 4: Pull Pinnacle pre-match odds for all WC 2026 fixtures
+python model/data_collector.py --wc-odds
+
+# Step 5: Pull shotmap data for matches with xG available
+python model/data_collector.py --shotmaps
+
+# Step 6: Pull event timelines for finished WC 2026 matches
+python model/data_collector.py --timelines
+
+# Step 7: Pull per-match player stats for all cached matches
+python model/data_collector.py --match-players
+
+# Use --resume to safely re-run without re-fetching already-cached files
+python model/data_collector.py --teams-only --resume
+
+# Dry-run to see the fetch plan without making any API calls
+python model/data_collector.py --dry-run
+```
+
+### Build team ratings (after data collection)
+
+```bash
+python model/poisson_model.py
+```
+
+Ratings saved to `data/processed/team_ratings.json`.
+
+### Run daily predictions
+
+```bash
+python model/predictions.py
+```
+
+Predictions saved to `data/processed/model_predictions.json` and automatically included in the next morning report.
+
+---
+
+## File Structure
+
+```
+WorldCup2026/
+├── agent/
+│   ├── system_prompt.md        # Claude system prompt (role, intelligence, formats)
+│   ├── morning_report.py       # Daily report generator
+│   └── live_query.py           # On-demand match query
+├── model/
+│   ├── data_collector.py       # One-time bulk data pull (TheStatsAPI)
+│   ├── poisson_model.py        # xG Poisson + Dixon-Coles model
+│   ├── player_props.py         # Player scorer/SOT/corners model
+│   └── predictions.py          # Daily orchestrator
+├── dashboard/
+│   ├── index.html              # Odds, bets, reports dashboard
+│   └── tournament.html         # Group table + knockout bracket
+├── data/
+│   ├── bets.json               # Bet log (edit manually)
+│   ├── subscribers.json        # Email subscribers
+│   ├── odds_cache.json         # Yesterday's odds cache (gitignored)
+│   ├── raw/                    # Raw API data (gitignored, ~1GB after collection)
+│   └── processed/              # Model outputs (committed)
+├── reports/                    # Daily .md reports (auto-committed by Actions)
+├── .github/workflows/
+│   ├── morning-report.yml      # Cron: 7 AM ET daily
+│   └── manual-trigger.yml      # workflow_dispatch with match_focus input
+├── .env                        # Local secrets (gitignored)
+├── .env.example                # Key template
+└── requirements.txt
+```
