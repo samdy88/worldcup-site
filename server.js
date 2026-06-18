@@ -311,11 +311,14 @@ async function handleApi(req, res) {
   }
 }
 
+const PUBLIC_ASSETS = new Set(['/index.html', '/404.html', '/app.js', '/style.css']);
+
 function serveStatic(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const pathname = url.pathname === '/' ? '/index.html' : decodeURIComponent(url.pathname);
-  const filePath = path.normalize(path.join(__dirname, pathname));
-  if (!filePath.startsWith(__dirname)) return sendError(res, 403, 'Forbidden');
+  if (!PUBLIC_ASSETS.has(pathname)) return sendError(res, 404, 'Not found');
+  const filePath = path.resolve(__dirname, `.${pathname}`);
+  if (path.relative(__dirname, filePath).startsWith('..')) return sendError(res, 403, 'Forbidden');
   fs.readFile(filePath, (error, content) => {
     if (error) {
       fs.readFile(path.join(__dirname, '404.html'), (notFoundError, notFoundContent) => {
