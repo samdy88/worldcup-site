@@ -130,6 +130,14 @@ async function getFixturesData() {
   }
 
   if (!process.env.API_SPORTS_KEY) return { source: 'demo-fallback', matches: demoMatches };
+=======
+  const response = await fetch(url, options);
+  if (!response.ok) throw new Error(`Provider ${url} returned ${response.status}`);
+  return response.json();
+}
+
+async function getFixturesData() {
+  if (!process.env.API_SPORTS_KEY) return { source: 'demo', matches: demoMatches };
   const payload = await fetchJson('https://v3.football.api-sports.io/fixtures?league=1&season=2026', { headers: { 'x-apisports-key': process.env.API_SPORTS_KEY } });
   const matches = (payload.response || []).map(item => ({
     id: String(item.fixture.id), date: (item.fixture.date || '').slice(0, 10), time: (item.fixture.date || '').slice(11, 16),
@@ -159,6 +167,11 @@ async function getStandingsData() {
     console.warn('[standings] free FIFA API unavailable:', error.message);
   }
   return { source: process.env.API_SPORTS_KEY ? 'api-sports-ready' : 'demo-fallback', standings: demoStandings() };
+  return { source: process.env.API_SPORTS_KEY ? 'api-sports-ready' : 'demo', teams: demoTeams };
+}
+
+async function getStandingsData() {
+  return { source: process.env.API_SPORTS_KEY ? 'api-sports-ready' : 'demo', standings: demoStandings() };
 }
 
 async function getOddsData() {

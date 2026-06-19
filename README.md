@@ -1,6 +1,6 @@
 # PredictWin
 
-PredictWin 是一个只做 2026 FIFA 的投注网站原型，包含前端、Node 后端、JSON 数据库、发卡平台卡密兑换、下注与投注池。
+PredictWin 是一个 2026 FIFA 的比赛实时查看与预测平台。
 
 > 合规说明：当前仅演示模拟积分、卡密兑换与下注流程，不提供真钱下注、提现、现金兑换或派奖。真实上线前需要完成目标地区法律审查、牌照、KYC/AML、年龄验证、地域限制、风控与交易审计。
 
@@ -44,6 +44,28 @@ PREDICTION_API_URL=                     # world-2026-prediction-model 输出 JSO
 ## 2026 FIFA 数据源接入
 
 - `📅 赛程比分`、`🛡️ 球队`、`🏆 排行榜`：后端提供 `/api/fixtures`、`/api/teams`、`/api/standings`，默认先接免费 `worldcup26.ir` 的 `/get/games`、`/get/teams`、`/get/groups`；该源不可用时再回退到 `API_SPORTS_KEY` 或内置演示数据。
+=======
+
+首次启动会自动创建 `data/db.json`。该文件包含真实运行数据，已加入 `.gitignore`。
+
+## 环境变量
+
+复制 `.env.example` 后按部署环境设置：
+
+```bash
+PORT=4173
+DB_PATH=./data/db.json
+CARD_WEBHOOK_SECRET=replace-with-third-party-webhook-secret
+API_SPORTS_KEY=                         # 可接 API-Sports 免费/试用 key，更新赛程/球队/排行榜
+ODDS_API_KEY=                           # 可接 The Odds API 免费/试用 key，更新实时赔率
+ODDS_API_SPORT_KEY=soccer_fifa_world_cup
+EXTERNAL_POOL_API_URL=                  # 其他投注网站/聚合器投注池 JSON API
+PREDICTION_API_URL=                     # world-2026-prediction-model 输出 JSON API
+```
+
+## 2026 FIFA 数据源接入
+
+- `📅 赛程比分`、`🛡️ 球队`、`🏆 排行榜`：后端提供 `/api/fixtures`、`/api/teams`、`/api/standings`。配置 `API_SPORTS_KEY` 后可接 API-Sports 的 2026 World Cup 数据；没有 key 时使用内置 FIFA 2026 演示数据。
 - `📈 实时赔率`：后端提供 `/api/odds`。配置 `ODDS_API_KEY` 与 `ODDS_API_SPORT_KEY=soccer_fifa_world_cup` 后可接 The Odds API；没有 key 时使用演示赔率。
 - `💰 投注池`：本站下注保存在 `/api/bets/pool`，同时可配置 `EXTERNAL_POOL_API_URL` 接入其他投注网站/聚合器 API，前端会展示本站积分与外部积分。
 - `🤖 预测`：后端提供 `/api/predictions`。配置 `PREDICTION_API_URL` 后可接 world-2026-prediction-model 输出；没有配置时用赔率隐含概率作为演示预测。
@@ -124,6 +146,61 @@ GitHub 的 `Resolve conflicts` 不能忽略：只要 PR 页面显示 conflict，
 - `style.css` 保留 `.app-shell`、`.sidebar`、`.frontend-identity`、`.hero-card`、`.odds-button`、`.pool-card` 等新版布局样式。
 
 合并后运行 `npm run check`，再启动 `npm start` 截图确认首页仍显示 PredictWin 2026 FIFA 专属投注平台。
+
+## 检查
+
+=======
+
+### 1. 发卡平台售出卡密后回调本站
+
+让发卡平台在订单支付成功后调用：
+
+```bash
+curl -X POST http://localhost:4173/api/card-platform/cards \
+  -H 'Content-Type: application/json' \
+  -H 'x-card-platform-secret: replace-with-third-party-webhook-secret' \
+  -d '{
+    "code": "ORDER-ABC-123",
+    "points": 1000,
+    "orderId": "third-party-order-10001",
+    "buyerEmail": "buyer@example.com"
+  }'
+```
+
+服务端会把卡密写入数据库，状态为 `active`。
+
+### 2. 用户在网站兑换卡密
+
+前端会调用：
+
+```http
+POST /api/cards/redeem
+Authorization: Bearer <session-token>
+Content-Type: application/json
+
+{ "code": "ORDER-ABC-123" }
+```
+
+成功后：
+
+- 卡密状态变为 `redeemed`
+- 记录 `redeemedBy` 和 `redeemedAt`
+- 用户积分增加对应 `points`
+
+## 主要 API
+
+| Method | Path | 说明 |
+| --- | --- | --- |
+| `POST` | `/api/auth/register` | 注册用户并发放 500 PTS |
+| `POST` | `/api/auth/login` | 登录并返回 token |
+| `GET` | `/api/auth/me` | 获取当前登录用户 |
+| `POST` | `/api/auth/logout` | 退出登录 |
+| `POST` | `/api/card-platform/cards` | 发卡平台写入新卡密 |
+| `POST` | `/api/cards/redeem` | 用户兑换卡密为积分 |
+| `GET` | `/api/bets/pool` | 获取全站投注池 |
+| `GET` | `/api/bets/me` | 获取我的投注 |
+| `POST` | `/api/bets` | 下单投注并扣除积分 |
+| `DELETE` | `/api/bets/me` | 清空当前用户投注记录 |
 
 ## 检查
 
