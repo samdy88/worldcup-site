@@ -212,7 +212,6 @@ function hideModalById(id) {
   element.setAttribute('aria-hidden', 'true');
 }
 
-}
 
 function hideModalById(id) {
   const element = $(id);
