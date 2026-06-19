@@ -45,19 +45,6 @@ let teams = [
 
 
 
-let teams = [
-  ['Mexico', 'A', 84, 'S. Giménez'],
-  ['South Africa', 'A', 72, 'P. Tau'],
-  ['Canada', 'B', 79, 'A. Davies'],
-  ['Japan', 'B', 82, 'K. Mitoma'],
-  ['United States', 'C', 81, 'C. Pulisic'],
-  ['Germany', 'C', 88, 'J. Musiala'],
-  ['Brazil', 'D', 91, 'Vinícius Jr.'],
-  ['Morocco', 'D', 83, 'A. Hakimi'],
-  ['Argentina', 'E', 90, 'L. Messi'],
-  ['Spain', 'E', 89, 'Pedri']
-];
-
 let baseOdds = {
   'wc2026-001': { HOME: 1.86, DRAW: 3.35, AWAY: 4.20 },
   'wc2026-002': { HOME: 2.18, DRAW: 3.10, AWAY: 3.05 },
