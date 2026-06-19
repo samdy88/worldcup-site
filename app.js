@@ -231,7 +231,6 @@ function openAuthModal(tab = 'register') {
   showModalById('authModal');
 }
 
-}
 
 function showModalById(id) {
   const element = $(id);
