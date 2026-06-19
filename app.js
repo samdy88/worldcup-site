@@ -5,6 +5,22 @@ const STORAGE_KEYS = {
 const API_BASE = '';
 const STARTING_POINTS = 500;
 
+const LANGUAGE_KEY = 'predictwin_language';
+const translations = {
+  zh: { nav: ['🏟️ 首页大厅', '📅 赛程比分', '🛡️ 球队', '🏆 排行榜', '📈 实时赔率', '🤖 预测', '💰 投注池', '🎫 我的投注'], title: 'PredictWin · 2026 FIFA 投注', search: '搜索球队、比赛、场馆、日期', auth: '登录 / 注册', logout: '退出', guestTitle: '注册 30 秒，领取 500 PTS 试玩积分', guestCta: '免费注册试玩', schedule: '赛程 / 比分', teams: '球队资料', standings: '排行榜', odds: '实时赔率', predictions: 'AI 预测', pool: '投注池', myBets: '我的投注', promoTitle: '新玩家专属：领取 500 PTS，预测今日焦点赛！', promoText: '注册即可获得试玩积分，选择 2026 FIFA 比赛的主胜 / 平局 / 客胜赔率，下注记录自动进入你的投注池。', promoCta: '立即免费注册', promoOdds: '先看实时赔率' },
+  en: { nav: ['🏟️ Lobby', '📅 Matches', '🛡️ Teams', '🏆 Standings', '📈 Live Odds', '🤖 Predictions', '💰 Pool', '🎫 My Bets'], title: 'PredictWin · FIFA 2026 Betting', search: 'Search teams, matches, venues, dates', auth: 'Login / Sign up', logout: 'Logout', guestTitle: 'Sign up in 30 seconds and claim 500 PTS', guestCta: 'Free sign up', schedule: 'Matches / Scores', teams: 'Teams', standings: 'Standings', odds: 'Live Odds', predictions: 'AI Predictions', pool: 'Betting Pool', myBets: 'My Bets', promoTitle: 'New player bonus: claim 500 PTS for today’s pick!', promoText: 'Register, choose a FIFA 2026 match, pick home/draw/away odds, and your bet enters the pool instantly.', promoCta: 'Claim free bet', promoOdds: 'View odds first' },
+  es: { nav: ['🏟️ Inicio', '📅 Partidos', '🛡️ Equipos', '🏆 Tabla', '📈 Cuotas', '🤖 Predicción', '💰 Pozo', '🎫 Mis apuestas'], title: 'PredictWin · Apuestas FIFA 2026', search: 'Buscar equipos, partidos, sedes, fechas', auth: 'Entrar / Registro', logout: 'Salir', guestTitle: 'Regístrate y recibe 500 PTS', guestCta: 'Registro gratis', schedule: 'Partidos / Marcador', teams: 'Equipos', standings: 'Clasificación', odds: 'Cuotas en vivo', predictions: 'Predicción IA', pool: 'Pozo de apuestas', myBets: 'Mis apuestas', promoTitle: 'Bono nuevo jugador: 500 PTS gratis', promoText: 'Regístrate, elige un partido FIFA 2026 y apuesta local/empate/visitante.', promoCta: 'Recibir bono', promoOdds: 'Ver cuotas' },
+  fr: { nav: ['🏟️ Accueil', '📅 Matchs', '🛡️ Équipes', '🏆 Classement', '📈 Cotes', '🤖 Prédiction', '💰 Pool', '🎫 Mes paris'], title: 'PredictWin · Paris FIFA 2026', search: 'Rechercher équipes, matchs, stades, dates', auth: 'Connexion / Inscription', logout: 'Sortir', guestTitle: 'Inscription rapide : 500 PTS offerts', guestCta: 'Inscription gratuite', schedule: 'Matchs / Scores', teams: 'Équipes', standings: 'Classement', odds: 'Cotes en direct', predictions: 'Prédictions IA', pool: 'Pool de paris', myBets: 'Mes paris', promoTitle: 'Offre nouveau joueur : 500 PTS', promoText: 'Choisissez un match FIFA 2026 et pariez domicile/nul/extérieur.', promoCta: 'Recevoir le bonus', promoOdds: 'Voir les cotes' },
+  pt: { nav: ['🏟️ Início', '📅 Jogos', '🛡️ Times', '🏆 Tabela', '📈 Odds', '🤖 Previsão', '💰 Pool', '🎫 Minhas apostas'], title: 'PredictWin · Apostas FIFA 2026', search: 'Buscar times, jogos, estádios, datas', auth: 'Entrar / Registrar', logout: 'Sair', guestTitle: 'Cadastre-se e ganhe 500 PTS', guestCta: 'Cadastro grátis', schedule: 'Jogos / Placar', teams: 'Times', standings: 'Classificação', odds: 'Odds ao vivo', predictions: 'Previsões IA', pool: 'Pool de apostas', myBets: 'Minhas apostas', promoTitle: 'Bônus novo jogador: 500 PTS', promoText: 'Escolha um jogo da FIFA 2026 e aposte mandante/empate/visitante.', promoCta: 'Resgatar bônus', promoOdds: 'Ver odds' },
+  de: { nav: ['🏟️ Lobby', '📅 Spiele', '🛡️ Teams', '🏆 Tabelle', '📈 Quoten', '🤖 Prognose', '💰 Pool', '🎫 Meine Tipps'], title: 'PredictWin · FIFA 2026 Wetten', search: 'Teams, Spiele, Stadien, Datum suchen', auth: 'Login / Registrieren', logout: 'Abmelden', guestTitle: 'Registrieren und 500 PTS sichern', guestCta: 'Gratis registrieren', schedule: 'Spiele / Ergebnisse', teams: 'Teams', standings: 'Tabelle', odds: 'Live-Quoten', predictions: 'KI-Prognosen', pool: 'Wettpool', myBets: 'Meine Wetten', promoTitle: 'Neuer Spielerbonus: 500 PTS', promoText: 'Wähle ein FIFA-2026-Spiel und tippe Heimsieg/Remis/Auswärtssieg.', promoCta: 'Bonus holen', promoOdds: 'Quoten ansehen' },
+  ar: { nav: ['🏟️ الرئيسية', '📅 المباريات', '🛡️ الفرق', '🏆 الترتيب', '📈 الاحتمالات', '🤖 التوقعات', '💰 المجمع', '🎫 رهاناتي'], title: 'PredictWin · رهانات FIFA 2026', search: 'ابحث عن فرق أو مباريات أو ملاعب أو تواريخ', auth: 'دخول / تسجيل', logout: 'خروج', guestTitle: 'سجّل واحصل على 500 نقطة', guestCta: 'تسجيل مجاني', schedule: 'المباريات / النتائج', teams: 'الفرق', standings: 'الترتيب', odds: 'احتمالات مباشرة', predictions: 'توقعات الذكاء الاصطناعي', pool: 'مجمع الرهانات', myBets: 'رهاناتي', promoTitle: 'عرض لاعب جديد: 500 نقطة', promoText: 'اختر مباراة FIFA 2026 وارهن على فوز/تعادل/خسارة.', promoCta: 'احصل على العرض', promoOdds: 'شاهد الاحتمالات' },
+  ja: { nav: ['🏟️ ホーム', '📅 試合', '🛡️ チーム', '🏆 順位', '📈 オッズ', '🤖 予測', '💰 プール', '🎫 自分のベット'], title: 'PredictWin · FIFA 2026 ベット', search: 'チーム、試合、会場、日付を検索', auth: 'ログイン / 登録', logout: 'ログアウト', guestTitle: '登録して500 PTSを獲得', guestCta: '無料登録', schedule: '日程 / スコア', teams: 'チーム', standings: '順位表', odds: 'ライブオッズ', predictions: 'AI予測', pool: 'ベットプール', myBets: 'マイベット', promoTitle: '新規特典：500 PTS無料', promoText: 'FIFA 2026の試合を選び、ホーム/ドロー/アウェイにベット。', promoCta: '特典を受け取る', promoOdds: 'オッズを見る' },
+  ko: { nav: ['🏟️ 홈', '📅 경기', '🛡️ 팀', '🏆 순위', '📈 배당', '🤖 예측', '💰 풀', '🎫 내 베팅'], title: 'PredictWin · FIFA 2026 베팅', search: '팀, 경기, 경기장, 날짜 검색', auth: '로그인 / 가입', logout: '로그아웃', guestTitle: '가입하고 500 PTS 받기', guestCta: '무료 가입', schedule: '일정 / 스코어', teams: '팀', standings: '순위표', odds: '실시간 배당', predictions: 'AI 예측', pool: '베팅 풀', myBets: '내 베팅', promoTitle: '신규 보너스: 500 PTS', promoText: 'FIFA 2026 경기에서 홈/무/원정 배당을 선택하세요.', promoCta: '보너스 받기', promoOdds: '배당 보기' }
+};
+let currentLanguage = localStorage.getItem(LANGUAGE_KEY) || 'zh';
+
+
+
 let demoMatches = [
   { id: 'wc2026-001', date: '2026-06-11', time: '20:00', home: 'Mexico', away: 'South Africa', group: 'Group A', venue: 'Estadio Azteca', status: 'soon', score: '0 - 0' },
   { id: 'wc2026-002', date: '2026-06-12', time: '18:00', home: 'Canada', away: 'Japan', group: 'Group B', venue: 'BMO Field', status: 'soon', score: '0 - 0' },
@@ -118,6 +134,46 @@ function updateLiveDataBanner() {
   message.textContent = `当前 ${fallbackSources.map(([key, source]) => `${key}=${source}`).join('，')}。请在部署环境配置 FREE_FIFA_API_BASE/API_SPORTS_KEY/ODDS_API_KEY/PREDICTION_API_URL/EXTERNAL_POOL_API_URL；已启用的数据源：${liveSources.join('，') || '无'}。`;
 }
 
+
+function t(key) {
+  return (translations[currentLanguage] || translations.zh)[key] || translations.zh[key] || key;
+}
+
+function applyLanguage(language = currentLanguage) {
+  currentLanguage = translations[language] ? language : 'zh';
+  localStorage.setItem(LANGUAGE_KEY, currentLanguage);
+  document.documentElement.lang = currentLanguage === 'zh' ? 'zh-CN' : currentLanguage;
+  document.documentElement.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
+  const navTexts = t('nav');
+  document.querySelectorAll('.side-nav a').forEach((link, index) => { link.textContent = navTexts[index] || link.textContent; });
+  $('site-search').placeholder = t('search');
+  $('auth-button').textContent = t('auth');
+  $('logout-button').textContent = t('logout');
+  document.querySelector('.topbar h1').textContent = t('title');
+  $('guest-gate').querySelector('h2').textContent = t('guestTitle');
+  $('guest-gate').querySelector('button').textContent = t('guestCta');
+  document.querySelector('[data-page="schedule"] .section-heading span').textContent = t('schedule');
+  document.querySelector('[data-page="teams"] .section-heading span').textContent = t('teams');
+  document.querySelector('[data-page="standings"] .section-heading span').textContent = t('standings');
+  document.querySelector('[data-page="odds"] .section-heading span').textContent = t('odds');
+  document.querySelector('[data-page="predictions"] .section-heading span').textContent = t('predictions');
+  document.querySelector('[data-page="pool"] .section-heading span').textContent = t('pool');
+  document.querySelector('[data-page="my-bets"] .section-heading span').textContent = t('myBets');
+  $('promoModalLabel').textContent = t('promoTitle');
+  document.querySelector('.promo-body p').textContent = t('promoText');
+  document.querySelector('.promo-actions [data-auth-tab]').textContent = t('promoCta');
+  document.querySelector('.promo-actions [data-route]').textContent = t('promoOdds');
+}
+
+function showPromoModal() {
+  const match = demoMatches.find(item => item.status === 'live') || demoMatches.find(item => item.date >= '2026-06-19') || demoMatches[0];
+  if (match) {
+    $('promo-match-title').textContent = `${match.home} vs ${match.away}`;
+    $('promo-match-meta').textContent = `${match.group} · ${match.date} ${match.time} · ${match.venue}`;
+  }
+  setTimeout(() => showModalById('promoModal'), 550);
+}
+
 function moneylineLabel(selection) {
   return { HOME: '主胜', DRAW: '平局', AWAY: '客胜' }[selection] || selection;
 }
@@ -128,6 +184,43 @@ function requireLogin(actionText = '请先注册或登录后再继续。') {
   showAuthMessage(actionText, 'error');
   openAuthModal('register');
   return false;
+}
+
+function showModalById(id) {
+  const element = $(id);
+  if (!element) return;
+  if (window.bootstrap?.Modal) {
+    bootstrap.Modal.getOrCreateInstance(element).show();
+    return;
+  }
+  element.classList.add('show');
+  element.style.display = 'block';
+  element.removeAttribute('aria-hidden');
+}
+
+function hideModalById(id) {
+  const element = $(id);
+  if (!element) return;
+  if (window.bootstrap?.Modal) {
+    bootstrap.Modal.getInstance(element)?.hide();
+    return;
+  }
+  element.classList.remove('show');
+  element.style.display = 'none';
+  element.setAttribute('aria-hidden', 'true');
+}
+
+function openAuthModal(tab = 'register') {
+  const tabButton = tab === 'login' ? $('login-tab') : $('register-tab');
+  if (window.bootstrap?.Tab) bootstrap.Tab.getOrCreateInstance(tabButton).show();
+  showModalById('authModal');
+}
+
+function showAuthMessage(message, type = 'success') {
+  const messageBox = $('auth-message');
+  messageBox.textContent = message;
+  messageBox.className = `auth-message ${type}`;
+  messageBox.classList.remove('d-none');
 }
 
 function openAuthModal(tab = 'register') {
@@ -176,6 +269,7 @@ async function registerUser(event) {
     updateUserChrome();
     await renderAllDynamic();
     showAuthMessage(`注册成功！已发放 ${STARTING_POINTS} PTS。`, 'success');
+    setTimeout(() => hideModalById('authModal'), 650);
     setTimeout(() => bootstrap.Modal.getInstance($('authModal'))?.hide(), 650);
   } catch (error) {
     showAuthMessage(error.message, 'error');
@@ -185,6 +279,23 @@ async function registerUser(event) {
 async function loginUser(event) {
   event.preventDefault();
   hideAuthMessage();
+
+  try {
+    const payload = await apiRequest('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email: $('login-email').value.trim(), password: $('login-password').value })
+    });
+    currentUser = payload.user;
+    saveToken(payload.token);
+    updateUserChrome();
+    await renderAllDynamic();
+    showAuthMessage(`欢迎回来，${currentUser.name}！`, 'success');
+    setTimeout(() => hideModalById('authModal'), 650);
+  } catch (error) {
+    showAuthMessage(error.message, 'error');
+  }
+}
+
 
   try {
     const payload = await apiRequest('/api/auth/login', {
@@ -274,6 +385,20 @@ function renderOdds() {
   $('hero-odds').innerHTML = oddsButtons(selectedMatchId, 'quick-odd');
 }
 
+function statusLabel(match) {
+  const status = String(match.status || '').toUpperCase();
+  if (status === 'LIVE' || status === 'IN_PLAY') return `LIVE ${match.minute ? match.minute + '′' : ''}`;
+  if (['FT', 'AET', 'PEN'].includes(status)) return 'FT';
+  return 'UPCOMING';
+}
+
+function renderMatches() {
+  const html = demoMatches.map(match => `
+    <article class="match-card">
+      <div><div class="team-name">${match.home}</div><small>${match.venue}</small><div class="match-stats">控球 ${match.stats?.possession || '-'} · 射门 ${match.stats?.shots || '-'}</div></div>
+      <div class="score-pill">${match.score}</div>
+      <div><div class="team-name">${match.away}</div><small>${match.group} · ${match.date} ${match.time}</small><div class="match-status ${String(match.status).toLowerCase() === 'live' ? 'live' : ''}">${statusLabel(match)}</div></div>
+      <button class="btn btn-sm btn-outline-warning pick-match" data-match-id="${match.id}">${String(match.status).toLowerCase() === 'live' ? '进入直播' : '投注'}</button>
 function renderMatches() {
   const html = demoMatches.map(match => `
     <article class="match-card">
@@ -286,6 +411,8 @@ function renderMatches() {
 
   $('featured-matches').innerHTML = html;
   $('schedule-list').innerHTML = html;
+  const today = new Date().toISOString().slice(0, 10);
+  $('today-count').textContent = demoMatches.filter(match => match.date === today || String(match.status).toLowerCase() === 'live').length;
   $('today-count').textContent = demoMatches.filter(match => match.date <= '2026-06-18').length;
 }
 
@@ -296,6 +423,7 @@ function renderTeams() {
       <strong>${team[0]}</strong>
       <p class="mb-2 text-secondary">核心球员：${team[3]}</p>
       <div class="meter"><span style="width:${team[2]}%"></span></div>
+      <div class="team-meta"><span>Group ${team[1]}</span><span>Power ${team[2]}</span><span>FIFA 2026</span></div>
       <small>综合实力 ${team[2]}</small>
     </article>
   `).join('');
@@ -310,6 +438,9 @@ function renderStandings() {
   $('standings-content').innerHTML = groups.map(group => `
     <article class="standing-card">
       <strong>${group.group}</strong>
+      <div class="standing-row text-secondary"><span>Team</span><b>场</b><b>胜</b><b>平</b><b>净</b><b>分</b></div>
+      ${group.rows.map(row => `
+        <div class="standing-row"><span>${row.team}</span><b>${row.played}</b><b>${row.win}</b><b>${row.draw}</b><b>${row.gd ?? 0}</b><b>${row.points}</b></div>
       <div class="standing-row text-secondary"><span>Team</span><b>场</b><b>胜</b><b>平</b><b>负</b><b>分</b></div>
       ${group.rows.map(row => `
         <div class="standing-row"><span>${row.team}</span><b>${row.played}</b><b>${row.win}</b><b>${row.draw}</b><b>${row.loss}</b><b>${row.points}</b></div>
@@ -336,6 +467,7 @@ function renderPrediction() {
         ${['HOME', 'DRAW', 'AWAY'].map(selection => `
           <div class="prob-row"><span>${moneylineLabel(selection)}</span><div class="meter"><span style="width:${probabilities[selection]}%"></span></div><b>${probabilities[selection]}%</b></div>
         `).join('')}
+        <small class="text-warning">推荐：${moneylineLabel(top[0])}</small><small class="prediction-model">模型：${predictionOverrides.find(item => item.matchId === match.id)?.model || 'FIFA-2026-World / Odds implied'}</small>
         <small class="text-warning">推荐：${moneylineLabel(top[0])}</small>
       </article>
     `;
@@ -459,6 +591,7 @@ async function redeemCard() {
     currentUser = payload.user;
     updateUserChrome();
     $('card-code').value = '';
+    hideModalById('walletModal');
     bootstrap.Modal.getInstance($('walletModal'))?.hide();
     alert(`卡密兑换成功：+${payload.card.points} PTS。`);
   } catch (error) {
@@ -523,6 +656,9 @@ async function boot() {
     renderSelectedMatch();
     renderOdds();
   });
+  $('language-select').value = currentLanguage;
+  applyLanguage(currentLanguage);
+  $('language-select').addEventListener('change', event => { applyLanguage(event.target.value); renderAllDynamic(); });
   $('site-search').addEventListener('input', event => renderSearchResults(event.target.value));
   $('register-pane').addEventListener('submit', registerUser);
   $('login-pane').addEventListener('submit', loginUser);
@@ -530,6 +666,13 @@ async function boot() {
   $('redeem-card').addEventListener('click', redeemCard);
   $('refresh-pool').addEventListener('click', () => renderBettingPool());
   $('clear-bets').addEventListener('click', clearMyBets);
+  document.body.addEventListener('click', event => {
+    const dismiss = event.target.closest('[data-bs-dismiss="modal"]');
+    if (dismiss && !window.bootstrap?.Modal) hideModalById(dismiss.closest('.modal')?.id);
+    handleBodyClick(event);
+  });
+  showPromoModal();
+
   document.body.addEventListener('click', handleBodyClick);
   setInterval(() => {
     renderOdds();

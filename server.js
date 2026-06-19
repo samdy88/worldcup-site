@@ -12,6 +12,81 @@ const DISABLE_FREE_FIFA_API = process.env.DISABLE_FREE_FIFA_API === 'true';
 
 
 const demoMatches = [
+  { id: 'wc2026-001', date: '2026-06-11', time: '20:00', home: 'Mexico', away: 'South Africa', group: 'Group A', venue: 'Estadio Azteca', status: 'FT', score: '2 - 1', stats: { possession: '57% - 43%', shots: '14 - 8', corners: '6 - 3' } },
+  { id: 'wc2026-002', date: '2026-06-11', time: '23:00', home: 'Denmark', away: 'South Korea', group: 'Group A', venue: 'Estadio BBVA', status: 'FT', score: '1 - 1', stats: { possession: '51% - 49%', shots: '10 - 11', corners: '4 - 5' } },
+  { id: 'wc2026-003', date: '2026-06-12', time: '18:00', home: 'Canada', away: 'Italy', group: 'Group B', venue: 'BMO Field', status: 'FT', score: '1 - 2', stats: { possession: '48% - 52%', shots: '9 - 13', corners: '3 - 6' } },
+  { id: 'wc2026-004', date: '2026-06-12', time: '21:00', home: 'Qatar', away: 'Switzerland', group: 'Group B', venue: 'Levi\'s Stadium', status: 'FT', score: '0 - 0', stats: { possession: '46% - 54%', shots: '6 - 9', corners: '2 - 5' } },
+  { id: 'wc2026-005', date: '2026-06-13', time: '19:00', home: 'Brazil', away: 'Morocco', group: 'Group C', venue: 'SoFi Stadium', status: 'FT', score: '3 - 1', stats: { possession: '61% - 39%', shots: '18 - 7', corners: '8 - 2' } },
+  { id: 'wc2026-006', date: '2026-06-13', time: '22:00', home: 'Haiti', away: 'Scotland', group: 'Group C', venue: 'AT&T Stadium', status: 'FT', score: '1 - 1', stats: { possession: '44% - 56%', shots: '8 - 12', corners: '3 - 4' } },
+  { id: 'wc2026-007', date: '2026-06-14', time: '18:00', home: 'United States', away: 'Paraguay', group: 'Group D', venue: 'MetLife Stadium', status: 'FT', score: '2 - 0', stats: { possession: '55% - 45%', shots: '15 - 9', corners: '7 - 4' } },
+  { id: 'wc2026-008', date: '2026-06-14', time: '21:00', home: 'Australia', away: 'Romania', group: 'Group D', venue: 'BC Place', status: 'FT', score: '0 - 1', stats: { possession: '50% - 50%', shots: '8 - 10', corners: '5 - 5' } },
+  { id: 'wc2026-009', date: '2026-06-15', time: '18:00', home: 'Germany', away: 'Curaçao', group: 'Group E', venue: 'NRG Stadium', status: 'FT', score: '4 - 0', stats: { possession: '69% - 31%', shots: '22 - 3', corners: '9 - 1' } },
+  { id: 'wc2026-010', date: '2026-06-15', time: '21:00', home: 'Ecuador', away: 'Ivory Coast', group: 'Group E', venue: 'Lincoln Financial Field', status: 'FT', score: '1 - 1', stats: { possession: '49% - 51%', shots: '10 - 10', corners: '4 - 4' } },
+  { id: 'wc2026-011', date: '2026-06-16', time: '18:00', home: 'Japan', away: 'Netherlands', group: 'Group F', venue: 'Lumen Field', status: 'FT', score: '1 - 2', stats: { possession: '47% - 53%', shots: '11 - 14', corners: '4 - 7' } },
+  { id: 'wc2026-012', date: '2026-06-16', time: '21:00', home: 'Poland', away: 'Tunisia', group: 'Group F', venue: 'Arrowhead Stadium', status: 'FT', score: '2 - 2', stats: { possession: '52% - 48%', shots: '13 - 10', corners: '6 - 3' } },
+  { id: 'wc2026-013', date: '2026-06-17', time: '18:00', home: 'Belgium', away: 'Egypt', group: 'Group G', venue: 'Mercedes-Benz Stadium', status: 'FT', score: '2 - 1', stats: { possession: '58% - 42%', shots: '16 - 8', corners: '7 - 2' } },
+  { id: 'wc2026-014', date: '2026-06-17', time: '21:00', home: 'Iran', away: 'New Zealand', group: 'Group G', venue: 'Gillette Stadium', status: 'FT', score: '1 - 0', stats: { possession: '54% - 46%', shots: '12 - 7', corners: '5 - 2' } },
+  { id: 'wc2026-015', date: '2026-06-18', time: '18:00', home: 'Spain', away: 'Cape Verde', group: 'Group H', venue: 'Hard Rock Stadium', status: 'FT', score: '3 - 0', stats: { possession: '72% - 28%', shots: '21 - 4', corners: '10 - 1' } },
+  { id: 'wc2026-016', date: '2026-06-18', time: '21:00', home: 'Uruguay', away: 'Saudi Arabia', group: 'Group H', venue: 'Camping World Stadium', status: 'FT', score: '2 - 0', stats: { possession: '57% - 43%', shots: '14 - 6', corners: '5 - 3' } },
+  { id: 'wc2026-017', date: '2026-06-19', time: '17:00', home: 'France', away: 'Senegal', group: 'Group I', venue: 'Rose Bowl', status: 'live', score: '1 - 1', minute: 64, stats: { possession: '60% - 40%', shots: '12 - 7', corners: '6 - 2' } },
+  { id: 'wc2026-018', date: '2026-06-19', time: '20:00', home: 'Norway', away: 'Suriname', group: 'Group I', venue: 'Allegiant Stadium', status: 'soon', score: '0 - 0', stats: { possession: '-', shots: '-', corners: '-' } },
+  { id: 'wc2026-019', date: '2026-06-20', time: '18:00', home: 'Argentina', away: 'Algeria', group: 'Group J', venue: 'AT&T Stadium', status: 'soon', score: '0 - 0', stats: { possession: '-', shots: '-', corners: '-' } },
+  { id: 'wc2026-020', date: '2026-06-20', time: '21:00', home: 'Austria', away: 'Jordan', group: 'Group J', venue: 'Estadio Akron', status: 'soon', score: '0 - 0', stats: { possession: '-', shots: '-', corners: '-' } },
+  { id: 'wc2026-021', date: '2026-06-21', time: '18:00', home: 'Portugal', away: 'New Caledonia', group: 'Group K', venue: 'MetLife Stadium', status: 'soon', score: '0 - 0', stats: { possession: '-', shots: '-', corners: '-' } },
+  { id: 'wc2026-022', date: '2026-06-21', time: '21:00', home: 'Colombia', away: 'Uzbekistan', group: 'Group K', venue: 'NRG Stadium', status: 'soon', score: '0 - 0', stats: { possession: '-', shots: '-', corners: '-' } },
+  { id: 'wc2026-023', date: '2026-06-22', time: '18:00', home: 'England', away: 'Croatia', group: 'Group L', venue: 'SoFi Stadium', status: 'soon', score: '0 - 0', stats: { possession: '-', shots: '-', corners: '-' } },
+  { id: 'wc2026-024', date: '2026-06-22', time: '21:00', home: 'Ghana', away: 'Panama', group: 'Group L', venue: 'BMO Field', status: 'soon', score: '0 - 0', stats: { possession: '-', shots: '-', corners: '-' } }
+];
+
+const demoTeams = [
+  ['Denmark', 'A', 85, 'C. Eriksen'],
+  ['Mexico', 'A', 84, 'S. Giménez'],
+  ['South Africa', 'A', 72, 'P. Tau'],
+  ['South Korea', 'A', 82, 'Son Heung-min'],
+  ['Canada', 'B', 79, 'A. Davies'],
+  ['Italy', 'B', 88, 'N. Barella'],
+  ['Qatar', 'B', 74, 'A. Afif'],
+  ['Switzerland', 'B', 83, 'G. Xhaka'],
+  ['Brazil', 'C', 91, 'Vinícius Jr.'],
+  ['Haiti', 'C', 68, 'D. Nazon'],
+  ['Morocco', 'C', 83, 'A. Hakimi'],
+  ['Scotland', 'C', 78, 'S. McTominay'],
+  ['Australia', 'D', 77, 'M. Duke'],
+  ['Paraguay', 'D', 76, 'M. Almirón'],
+  ['Romania', 'D', 75, 'N. Stanciu'],
+  ['United States', 'D', 81, 'C. Pulisic'],
+  ['Curaçao', 'E', 69, 'L. Bacuna'],
+  ['Ecuador', 'E', 80, 'M. Caicedo'],
+  ['Germany', 'E', 88, 'J. Musiala'],
+  ['Ivory Coast', 'E', 79, 'S. Adingra'],
+  ['Japan', 'F', 82, 'K. Mitoma'],
+  ['Netherlands', 'F', 89, 'V. van Dijk'],
+  ['Poland', 'F', 81, 'R. Lewandowski'],
+  ['Tunisia', 'F', 75, 'E. Skhiri'],
+  ['Belgium', 'G', 86, 'K. De Bruyne'],
+  ['Egypt', 'G', 81, 'M. Salah'],
+  ['Iran', 'G', 77, 'M. Taremi'],
+  ['New Zealand', 'G', 70, 'C. Wood'],
+  ['Cape Verde', 'H', 73, 'Bebé'],
+  ['Saudi Arabia', 'H', 74, 'S. Al-Dawsari'],
+  ['Spain', 'H', 89, 'Pedri'],
+  ['Uruguay', 'H', 84, 'F. Valverde'],
+  ['France', 'I', 92, 'K. Mbappé'],
+  ['Norway', 'I', 84, 'E. Haaland'],
+  ['Senegal', 'I', 83, 'S. Mané'],
+  ['Suriname', 'I', 68, 'S. Becker'],
+  ['Algeria', 'J', 80, 'R. Mahrez'],
+  ['Argentina', 'J', 90, 'L. Messi'],
+  ['Austria', 'J', 81, 'D. Alaba'],
+  ['Jordan', 'J', 72, 'M. Al-Taamari'],
+  ['Colombia', 'K', 82, 'L. Díaz'],
+  ['New Caledonia', 'K', 61, 'TBD'],
+  ['Portugal', 'K', 89, 'C. Ronaldo'],
+  ['Uzbekistan', 'K', 74, 'E. Shomurodov'],
+  ['Croatia', 'L', 84, 'L. Modrić'],
+  ['England', 'L', 90, 'J. Bellingham'],
+  ['Ghana', 'L', 78, 'M. Kudus'],
+  ['Panama', 'L', 73, 'A. Carrasquilla']
   { id: 'wc2026-001', date: '2026-06-11', time: '20:00', home: 'Mexico', away: 'South Africa', group: 'Group A', venue: 'Estadio Azteca', status: 'soon', score: '0 - 0' },
   { id: 'wc2026-002', date: '2026-06-12', time: '18:00', home: 'Canada', away: 'Japan', group: 'Group B', venue: 'BMO Field', status: 'soon', score: '0 - 0' },
   { id: 'wc2026-003', date: '2026-06-13', time: '21:00', home: 'United States', away: 'Germany', group: 'Group C', venue: 'MetLife Stadium', status: 'live', score: '1 - 1' },
@@ -33,6 +108,42 @@ const demoOdds = {
 };
 
 function demoStandings() {
+  const table = new Map(demoTeams.map(team => [team[0], { team: team[0], group: team[1], played: 0, win: 0, draw: 0, loss: 0, gf: 0, ga: 0, gd: 0, points: 0 }]));
+  for (const match of demoMatches.filter(item => ['FT', 'AET', 'PEN'].includes(String(item.status).toUpperCase()))) {
+    const [homeGoals, awayGoals] = match.score.split(' - ').map(Number);
+    const home = table.get(match.home);
+    const away = table.get(match.away);
+    if (!home || !away || !Number.isFinite(homeGoals) || !Number.isFinite(awayGoals)) continue;
+    home.played += 1; away.played += 1;
+    home.gf += homeGoals; home.ga += awayGoals; away.gf += awayGoals; away.ga += homeGoals;
+    home.gd = home.gf - home.ga; away.gd = away.gf - away.ga;
+    if (homeGoals > awayGoals) { home.win += 1; home.points += 3; away.loss += 1; }
+    else if (homeGoals < awayGoals) { away.win += 1; away.points += 3; home.loss += 1; }
+    else { home.draw += 1; away.draw += 1; home.points += 1; away.points += 1; }
+  }
+  return Array.from({ length: 12 }, (_, index) => String.fromCharCode(65 + index)).map(group => ({
+    group: `Group ${group}`,
+    rows: Array.from(table.values()).filter(row => row.group === group).sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf || a.team.localeCompare(b.team))
+  }));
+}
+
+const poissonModelProbabilities = {
+  'wc2026-001': { HOME: 55, DRAW: 26, AWAY: 19 },
+  'wc2026-005': { HOME: 60, DRAW: 24, AWAY: 16 },
+  'wc2026-009': { HOME: 82, DRAW: 13, AWAY: 5 },
+  'wc2026-015': { HOME: 76, DRAW: 17, AWAY: 7 },
+  'wc2026-017': { HOME: 62, DRAW: 23, AWAY: 15 },
+  'wc2026-019': { HOME: 69, DRAW: 20, AWAY: 11 },
+  'wc2026-021': { HOME: 91, DRAW: 8, AWAY: 1 },
+  'wc2026-023': { HOME: 57, DRAW: 25, AWAY: 18 }
+};
+
+function buildDemoPredictions() {
+  return demoMatches.map(match => ({
+    matchId: match.id,
+    model: poissonModelProbabilities[match.id] ? 'FIFA-2026-World Poisson sample' : 'odds-implied fallback',
+    probabilities: poissonModelProbabilities[match.id] || impliedProbabilities(demoOdds[match.id] || { HOME: 2, DRAW: 3.2, AWAY: 3.4 })
+  }));
   return ['A', 'B', 'C', 'D', 'E'].map(group => ({
     group: `Group ${group}`,
     rows: demoTeams.filter(team => team[1] === group).map((team, index) => ({ team: team[0], played: index + 1, win: index ? 0 : 1, draw: index ? 1 : 0, loss: 0, points: index ? 1 : 3 }))
