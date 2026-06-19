@@ -523,14 +523,11 @@ function renderStandings() {
   }));
 
   $('standings-content').innerHTML = groups.map(group => `
-    <article class="standing-card">
+ <条目类别 =“站立牌”>
       <strong>${group.group}</strong>
       <div class="standing-row text-secondary"><span>Team</span><b>场</b><b>胜</b><b>平</b><b>净</b><b>分</b></div>
       ${group.rows.map(row => `
         <div class="standing-row"><span>${row.team}</span><b>${row.played}</b><b>${row.win}</b><b>${row.draw}</b><b>${row.gd ?? 0}</b><b>${row.points}</b></div>
-      <div class="standing-row text-secondary"><span>Team</span><b>场</b><b>胜</b><b>平</b><b>负</b><b>分</b></div>
-      ${group.rows.map(row => `
-        <div class="standing-row"><span>${row.team}</span><b>${row.played}</b><b>${row.win}</b><b>${row.draw}</b><b>${row.loss}</b><b>${row.points}</b></div>
       `).join('')}
     </article>
   `).join('');
