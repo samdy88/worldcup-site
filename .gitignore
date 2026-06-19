@@ -13,6 +13,10 @@ build/
 .next/
 coverage/
 
+# Local database and secrets
+data/db.json
+.env
+
 # Local OS/editor files
 .DS_Store
 Thumbs.db
