@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: predictwin
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/fixtures
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PORT
+        value: 10000
+      - key: DB_PATH
+        value: ./data/db.json
+      - key: CARD_WEBHOOK_SECRET
+        generateValue: true
+      - key: FREE_FIFA_API_BASE
+        value: https://worldcup26.ir
+      - key: PROVIDER_TIMEOUT_MS
+        value: 3500
+      - key: DISABLE_FREE_FIFA_API
+        value: false
+      - key: ODDS_API_SPORT_KEY
+        value: soccer_fifa_world_cup

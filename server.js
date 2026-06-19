@@ -7,6 +7,8 @@ const PORT = Number(process.env.PORT || 4173);
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data', 'db.json');
 const CARD_WEBHOOK_SECRET = process.env.CARD_WEBHOOK_SECRET || 'dev-card-secret';
 const STARTING_POINTS = 500;
+const FREE_FIFA_API_BASE = process.env.FREE_FIFA_API_BASE || 'https://worldcup26.ir';
+const DISABLE_FREE_FIFA_API = process.env.DISABLE_FREE_FIFA_API === 'true';
 
 
 const demoMatches = [
@@ -48,6 +50,86 @@ function impliedProbabilities(odds) {
 }
 
 async function fetchJson(url, options = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Number(process.env.PROVIDER_TIMEOUT_MS || 3500));
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    if (!response.ok) throw new Error(`Provider ${url} returned ${response.status}`);
+    return response.json();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function unwrapArray(payload, keys) {
+  if (Array.isArray(payload)) return payload;
+  for (const key of keys) {
+    if (Array.isArray(payload?.[key])) return payload[key];
+    if (Array.isArray(payload?.data?.[key])) return payload.data[key];
+  }
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.response)) return payload.response;
+  return [];
+}
+
+async function fetchFreeWorldCup(path) {
+  if (DISABLE_FREE_FIFA_API) throw new Error('Free FIFA API disabled');
+  return fetchJson(`${FREE_FIFA_API_BASE.replace(/\/$/, '')}/get/${path}`);
+}
+
+function normalizeFreeGame(item, index) {
+  const home = item.home_team || item.homeTeam || item.home_name || item.home?.name || item.team1 || item.team_a || item.home || 'TBD Home';
+  const away = item.away_team || item.awayTeam || item.away_name || item.away?.name || item.team2 || item.team_b || item.away || 'TBD Away';
+  const dateRaw = item.date || item.match_date || item.fixture?.date || item.datetime || '';
+  const homeGoals = item.home_score ?? item.homeScore ?? item.goals?.home ?? item.score_home ?? 0;
+  const awayGoals = item.away_score ?? item.awayScore ?? item.goals?.away ?? item.score_away ?? 0;
+  return {
+    id: String(item.id || item.match_id || item.fixture?.id || `wc2026-live-${index + 1}`),
+    date: String(dateRaw).slice(0, 10) || item.day || '2026-06-11',
+    time: String(dateRaw).slice(11, 16) || item.time || 'TBD',
+    home,
+    away,
+    group: item.group || item.stage || item.round || item.matchday || 'FIFA 2026',
+    venue: item.venue || item.stadium || item.stadium_name || item.fixture?.venue?.name || 'TBD',
+    status: item.status || item.fixture?.status?.short || 'soon',
+    score: `${homeGoals ?? 0} - ${awayGoals ?? 0}`
+  };
+}
+
+function normalizeFreeTeam(item, index) {
+  return [
+    item.name || item.name_en || item.team || item.country || `Team ${index + 1}`,
+    item.group || item.group_name || item.group_letter || '-',
+    Number(item.rating || item.rank_score || Math.max(60, 95 - index)),
+    item.captain || item.key_player || item.fifa_code || item.code || 'TBD'
+  ];
+}
+
+function normalizeFreeStandings(payload) {
+  const groups = unwrapArray(payload, ['groups', 'standings', 'tables']);
+  return groups.map((group, groupIndex) => {
+    const rows = unwrapArray(group, ['teams', 'rows', 'standings']).map((row, rowIndex) => ({
+      team: row.team || row.name || row.name_en || row.country || `Team ${rowIndex + 1}`,
+      played: Number(row.played ?? row.p ?? row.matches ?? 0),
+      win: Number(row.win ?? row.w ?? row.wins ?? 0),
+      draw: Number(row.draw ?? row.d ?? row.draws ?? 0),
+      loss: Number(row.loss ?? row.l ?? row.losses ?? 0),
+      points: Number(row.points ?? row.pts ?? 0)
+    }));
+    return { group: group.group || group.name || group.group_name || `Group ${String.fromCharCode(65 + groupIndex)}`, rows };
+  }).filter(group => group.rows.length);
+}
+
+async function getFixturesData() {
+  try {
+    const payload = await fetchFreeWorldCup('games');
+    const matches = unwrapArray(payload, ['games', 'matches', 'fixtures']).map(normalizeFreeGame).filter(match => match.home !== 'TBD Home' || match.away !== 'TBD Away');
+    if (matches.length) return { source: 'worldcup26-free-api', matches };
+  } catch (error) {
+    console.warn('[fixtures] free FIFA API unavailable:', error.message);
+  }
+
+  if (!process.env.API_SPORTS_KEY) return { source: 'demo-fallback', matches: demoMatches };
   const response = await fetch(url, options);
   if (!response.ok) throw new Error(`Provider ${url} returned ${response.status}`);
   return response.json();
@@ -65,6 +147,25 @@ async function getFixturesData() {
 }
 
 async function getTeamsData() {
+  try {
+    const payload = await fetchFreeWorldCup('teams');
+    const teams = unwrapArray(payload, ['teams']).map(normalizeFreeTeam);
+    if (teams.length) return { source: 'worldcup26-free-api', teams };
+  } catch (error) {
+    console.warn('[teams] free FIFA API unavailable:', error.message);
+  }
+  return { source: process.env.API_SPORTS_KEY ? 'api-sports-ready' : 'demo-fallback', teams: demoTeams };
+}
+
+async function getStandingsData() {
+  try {
+    const payload = await fetchFreeWorldCup('groups');
+    const standings = normalizeFreeStandings(payload);
+    if (standings.length) return { source: 'worldcup26-free-api', standings };
+  } catch (error) {
+    console.warn('[standings] free FIFA API unavailable:', error.message);
+  }
+  return { source: process.env.API_SPORTS_KEY ? 'api-sports-ready' : 'demo-fallback', standings: demoStandings() };
   return { source: process.env.API_SPORTS_KEY ? 'api-sports-ready' : 'demo', teams: demoTeams };
 }
 
