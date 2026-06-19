@@ -181,14 +181,3 @@ GitHub 的 `Resolve conflicts` 不能忽略：只要 PR 页面显示 conflict，
 ```bash
 npm run check
 ```
-
-
-## WC2026 Event Center 首页
-
-首页现在采用 PredictWin 自有品牌的赛事中心结构：
-
-- 顶部是“World Win 26 / 免费投注 / Event Center v3”活动首屏，突出 500 PTS 试玩积分和 WC2026 专属投注。
-- 中间是 Top Events 盘口列表，支持今天、明天、全部切换。
-- 用户点击主胜 / 平局 / 客胜赔率后，会先加入右侧投注单；确认积分后才提交 `/api/bets`。
-- 长期投注和射手榜分别由 `/api/outrights` 与 `/api/top-scorers` 提供；没有外部 API 时使用内置 demo-market / demo-stats。
-- 该页面只参考成熟体育投注站的信息架构，不复制第三方品牌、Logo、素材或原始页面代码。

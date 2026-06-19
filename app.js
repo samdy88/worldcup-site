@@ -180,6 +180,120 @@ function showPromoModal() {
   setTimeout(() => showModalById('promoModal'), 550);
 }
 
+const $ = id => document.getElementById(id);
+
+async function apiRequest(path, options = {}) {
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  const token = localStorage.getItem(STORAGE_KEYS.token);
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || '服务器请求失败。');
+  return payload;
+}
+
+function saveToken(token) {
+  localStorage.setItem(STORAGE_KEYS.token, token);
+}
+
+function clearToken() {
+  localStorage.removeItem(STORAGE_KEYS.token);
+}
+
+
+async function loadFifa2026Data() {
+  try {
+    const [fixtures, teamData, standingsData, oddsData, poolData, predictionData] = await Promise.all([
+      apiRequest('/api/fixtures'),
+      apiRequest('/api/teams'),
+      apiRequest('/api/standings'),
+      apiRequest('/api/odds'),
+      apiRequest('/api/external-pools'),
+      apiRequest('/api/predictions')
+    ]);
+    if (fixtures.matches?.length) demoMatches = fixtures.matches;
+    if (teamData.teams?.length) teams = teamData.teams;
+    if (standingsData.standings?.length) standingsGroups = standingsData.standings;
+    if (oddsData.oddsByMatchId) baseOdds = oddsData.oddsByMatchId;
+    externalPools = poolData.pools || [];
+    predictionOverrides = predictionData.predictions || [];
+    dataSources = { fixtures: fixtures.source, teams: teamData.source, standings: standingsData.source, odds: oddsData.source, pools: poolData.source, predictions: predictionData.source };
+    updateDataSourceStatus();
+    updateLiveDataBanner();
+    selectedMatchId = demoMatches[0]?.id || selectedMatchId;
+  } catch (error) {
+    console.warn('FIFA 2026 data API unavailable, using demo fallback.', error);
+    dataSources = { fixtures: 'demo-fallback', teams: 'demo-fallback', standings: 'demo-fallback', odds: 'demo-fallback', pools: 'local', predictions: 'demo-model' };
+    updateDataSourceStatus();
+    updateLiveDataBanner();
+  }
+}
+
+function updateDataSourceStatus() {
+  const target = $('data-source-status');
+  if (!target) return;
+  target.textContent = `数据源：赛程 ${dataSources.fixtures || '-'} · 赔率 ${dataSources.odds || '-'} · 预测 ${dataSources.predictions || '-'} · 投注池 ${dataSources.pools || '-'}`;
+}
+
+
+function updateLiveDataBanner() {
+  const banner = $('live-data-banner');
+  const message = $('live-data-message');
+  if (!banner || !message) return;
+
+  const fallbackSources = Object.entries(dataSources).filter(([, source]) => String(source || '').includes('demo'));
+  const liveSources = Object.values(dataSources).filter(source => source && !String(source).includes('demo'));
+
+  if (!fallbackSources.length) {
+    banner.classList.add('d-none');
+    return;
+  }
+
+  banner.classList.remove('d-none');
+  message.textContent = `当前 ${fallbackSources.map(([key, source]) => `${key}=${source}`).join('，')}。请在部署环境配置 FREE_FIFA_API_BASE/API_SPORTS_KEY/ODDS_API_KEY/PREDICTION_API_URL/EXTERNAL_POOL_API_URL；已启用的数据源：${liveSources.join('，') || '无'}。`;
+}
+
+
+function t(key) {
+  return (translations[currentLanguage] || translations.zh)[key] || translations.zh[key] || key;
+}
+
+function applyLanguage(language = currentLanguage) {
+  currentLanguage = translations[language] ? language : 'zh';
+  localStorage.setItem(LANGUAGE_KEY, currentLanguage);
+  document.documentElement.lang = currentLanguage === 'zh' ? 'zh-CN' : currentLanguage;
+  document.documentElement.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
+  const navTexts = t('nav');
+  document.querySelectorAll('.side-nav a').forEach((link, index) => { link.textContent = navTexts[index] || link.textContent; });
+  $('site-search').placeholder = t('search');
+  $('auth-button').textContent = t('auth');
+  $('logout-button').textContent = t('logout');
+  document.querySelector('.topbar h1').textContent = t('title');
+  $('guest-gate').querySelector('h2').textContent = t('guestTitle');
+  $('guest-gate').querySelector('button').textContent = t('guestCta');
+  document.querySelector('[data-page="schedule"] .section-heading span').textContent = t('schedule');
+  document.querySelector('[data-page="teams"] .section-heading span').textContent = t('teams');
+  document.querySelector('[data-page="standings"] .section-heading span').textContent = t('standings');
+  document.querySelector('[data-page="odds"] .section-heading span').textContent = t('odds');
+  document.querySelector('[data-page="predictions"] .section-heading span').textContent = t('predictions');
+  document.querySelector('[data-page="pool"] .section-heading span').textContent = t('pool');
+  document.querySelector('[data-page="my-bets"] .section-heading span').textContent = t('myBets');
+  $('promoModalLabel').textContent = t('promoTitle');
+  document.querySelector('.promo-body p').textContent = t('promoText');
+  document.querySelector('.promo-actions [data-auth-tab]').textContent = t('promoCta');
+  document.querySelector('.promo-actions [data-route]').textContent = t('promoOdds');
+}
+
+function showPromoModal() {
+  const match = demoMatches.find(item => item.status === 'live') || demoMatches.find(item => item.date >= '2026-06-19') || demoMatches[0];
+  if (match) {
+    $('promo-match-title').textContent = `${match.home} vs ${match.away}`;
+    $('promo-match-meta').textContent = `${match.group} · ${match.date} ${match.time} · ${match.venue}`;
+  }
+  setTimeout(() => showModalById('promoModal'), 550);
+}
+
 function moneylineLabel(selection) {
   return { HOME: '主胜', DRAW: '平局', AWAY: '客胜' }[selection] || selection;
 }
@@ -333,16 +447,13 @@ function prediction(match) {
 }
 
 function renderMatchSelect() {
-  const select = $('match-select');
-  if (!select) return;
-  select.innerHTML = demoMatches.map(match => `<option value="${match.id}">${match.date} ${match.home} vs ${match.away}</option>`).join('');
-  select.value = selectedMatchId;
+  $('match-select').innerHTML = demoMatches.map(match => `<option value="${match.id}">${match.date} ${match.home} vs ${match.away}</option>`).join('');
+  $('match-select').value = selectedMatchId;
 }
 
 function renderSelectedMatch() {
-  const match = demoMatches.find(item => item.id === selectedMatchId) || demoMatches[0];
-  const selectedCard = $('selected-match-card');
-  if (selectedCard) selectedCard.innerHTML = `<div class="team-name">${match.home} vs ${match.away}</div><div class="small text-secondary">${match.group} · ${match.date} ${match.time} · ${match.venue}</div>`;
+  const match = demoMatches.find(item => item.id === selectedMatchId);
+  $('selected-match-card').innerHTML = `<div class="team-name">${match.home} vs ${match.away}</div><div class="small text-secondary">${match.group} · ${match.date} ${match.time} · ${match.venue}</div>`;
   $('hero-match-title').textContent = `${match.home} vs ${match.away}`;
   $('hero-match-meta').textContent = `${match.group} · ${match.date} ${match.time} · ${match.venue}`;
   [$('hero-home-score').textContent, $('hero-away-score').textContent] = match.score.split(' - ');
@@ -359,11 +470,8 @@ function oddsButtons(matchId, className = 'odds-button') {
 }
 
 function renderOdds() {
-  const oddsPanel = $('odds-panel');
-  if (oddsPanel) oddsPanel.innerHTML = oddsButtons(selectedMatchId);
-  const heroOdds = $('hero-odds');
-  if (heroOdds) heroOdds.innerHTML = oddsButtons(selectedMatchId, 'quick-odd');
-  renderBetSlip();
+  $('odds-panel').innerHTML = oddsButtons(selectedMatchId);
+  $('hero-odds').innerHTML = oddsButtons(selectedMatchId, 'quick-odd');
 }
 
 function statusLabel(match) {
@@ -373,32 +481,8 @@ function statusLabel(match) {
   return 'UPCOMING';
 }
 
-function matchDateRank(match) {
-  const today = '2026-06-19';
-  if (activeDateFilter === 'today') return match.date === today || String(match.status).toLowerCase() === 'live';
-  if (activeDateFilter === 'tomorrow') return match.date === '2026-06-20';
-  return true;
-}
-
-function renderTopEventCard(match) {
-  const probabilities = prediction(match);
-  const odds = getCurrentOdds(match.id);
-  return `
-    <article class="top-event-card">
-      <div class="event-status-row"><span class="match-status ${String(match.status).toLowerCase() === 'live' ? 'live' : ''}">${statusLabel(match)}</span><small>${match.group} · ${match.date} ${match.time}</small></div>
-      <div class="event-teams"><strong>${match.home}</strong><span>${match.score}</span><strong>${match.away}</strong></div>
-      <div class="event-meta">${match.venue} · 控球 ${match.stats?.possession || '-'} · 射门 ${match.stats?.shots || '-'}</div>
-      <div class="win-probabilities">${['HOME', 'DRAW', 'AWAY'].map(selection => `<span>${moneylineLabel(selection)} <b>${probabilities[selection]}%</b></span>`).join('')}</div>
-      <div class="quick-odds">${['HOME', 'DRAW', 'AWAY'].map(selection => `<button class="quick-odd" data-selection="${selection}" data-match-id="${match.id}"><span>${moneylineLabel(selection)}</span><strong>${odds[selection].toFixed(2)}</strong></button>`).join('')}</div>
-      <button class="all-markets" data-match-id="${match.id}">所有盘口 +${Math.floor(420 + Number(match.id.replace(/\D/g, '').slice(-2) || 1) * 17)}</button>
-    </article>`;
-}
-
 function renderMatches() {
-  const eventMatches = demoMatches.filter(matchDateRank);
-  const html = (eventMatches.length ? eventMatches : demoMatches).map(renderTopEventCard).join('');
-  $('featured-matches').innerHTML = html;
-  $('schedule-list').innerHTML = demoMatches.map(match => `
+  const html = demoMatches.map(match => `
     <article class="match-card">
       <div><div class="team-name">${match.home}</div><small>${match.venue}</small><div class="match-stats">控球 ${match.stats?.possession || '-'} · 射门 ${match.stats?.shots || '-'}</div></div>
       <div class="score-pill">${match.score}</div>
@@ -406,33 +490,12 @@ function renderMatches() {
       <button class="btn btn-sm btn-outline-warning pick-match" data-match-id="${match.id}">${String(match.status).toLowerCase() === 'live' ? '进入直播' : '投注'}</button>
     </article>
   `).join('');
-  const todayCount = $('today-count');
-  if (todayCount) todayCount.textContent = demoMatches.filter(match => match.date === '2026-06-19' || String(match.status).toLowerCase() === 'live').length;
-}
 
-function renderOutrights() {
-  const markets = outrights.length ? outrights : [
-    { label: '冠军', selections: [{ name: 'Brazil', odds: 5.2 }, { name: 'France', odds: 6.1 }, { name: 'Argentina', odds: 6.4 }, { name: 'England', odds: 7.2 }] },
-    { label: '小组冠军 · Group I', selections: [{ name: 'France', odds: 1.62 }, { name: 'Norway', odds: 3.4 }, { name: 'Senegal', odds: 4.1 }, { name: 'Suriname', odds: 26 }] }
-  ];
-  const board = $('outrights-board');
-  if (!board) return;
-  board.innerHTML = markets.map(market => `<article class="outright-market"><strong>${market.label}</strong>${market.selections.map(item => `<button class="market-line" type="button"><span>${item.name}</span><b>${Number(item.odds).toFixed(2)}</b></button>`).join('')}</article>`).join('');
+  $('featured-matches').innerHTML = html;
+  $('schedule-list').innerHTML = html;
+  const today = new Date().toISOString().slice(0, 10);
+  $('today-count').textContent = demoMatches.filter(match => match.date === today || String(match.status).toLowerCase() === 'live').length;
 }
-
-function renderTopScorers() {
-  const players = topScorers.length ? topScorers : [
-    { rank: 1, name: 'Kylian Mbappé', team: 'France', goals: 3 },
-    { rank: 2, name: 'Lionel Messi', team: 'Argentina', goals: 3 },
-    { rank: 3, name: 'Harry Kane', team: 'England', goals: 2 },
-    { rank: 4, name: 'Vinícius Jr.', team: 'Brazil', goals: 2 },
-    { rank: 5, name: 'Erling Haaland', team: 'Norway', goals: 2 }
-  ];
-  const board = $('top-scorers-board');
-  if (!board) return;
-  board.innerHTML = players.slice(0, 10).map(player => `<div class="scorer-row"><span>#${player.rank}</span><strong>${player.name}</strong><small>${player.team}</small><b>${player.goals} 球</b></div>`).join('');
-}
-
 
 function renderTeams() {
   $('teams-grid').innerHTML = teams.map(team => `
@@ -486,49 +549,18 @@ function renderPrediction() {
     `;
   }).join('');
 
-  const topPick = $('top-pick');
-  if (topPick) topPick.textContent = best;
+  $('top-pick').textContent = best;
 }
 
-function selectBet(selection, matchId = selectedMatchId) {
-  const match = demoMatches.find(item => item.id === matchId) || demoMatches[0];
-  const odds = getCurrentOdds(match.id);
-  selectedMatchId = match.id;
-  selectedBet = {
-    matchId: match.id,
-    matchLabel: `${match.home} vs ${match.away}`,
-    matchDate: match.date,
-    selection,
-    selectionLabel: moneylineLabel(selection),
-    odds: odds[selection]
-  };
-  renderBetSlip();
-}
-
-function renderBetSlip() {
-  const slip = $('bet-slip');
-  const empty = $('bet-slip-empty');
-  if (!slip || !empty) return;
-  if (!selectedBet) {
-    slip.classList.add('d-none');
-    empty.classList.remove('d-none');
-    return;
-  }
-  const stake = Number.parseInt($('stake-input')?.value || '10', 10) || 10;
-  empty.classList.add('d-none');
-  slip.classList.remove('d-none');
-  $('bet-slip-match').innerHTML = `<div class="team-name">${selectedBet.matchLabel}</div><div class="small text-secondary">${selectedBet.matchDate} · ${selectedBet.selectionLabel} @ ${Number(selectedBet.odds).toFixed(2)}</div>`;
-  $('bet-slip-return').textContent = `${(stake * selectedBet.odds).toFixed(2)} PTS`;
-}
-
-async function placeBet(selection = selectedBet?.selection, matchId = selectedBet?.matchId || selectedMatchId) {
-  if (!selection) return alert('请先选择一个赔率加入投注单。');
+async function placeBet(selection, matchId = selectedMatchId) {
   if (!requireLogin('请先注册/登录，领取模拟积分后即可投注。')) return;
-  const stake = Number.parseInt($('stake-input')?.value || '0', 10);
+
+  const stake = Number.parseInt($('stake-input').value, 10);
   if (!Number.isFinite(stake) || stake <= 0) return alert('请输入有效投注积分。');
   if (currentUser.points < stake) return alert('积分不足，请先充值。');
-  const match = demoMatches.find(item => item.id === matchId) || demoMatches[0];
-  const odds = selectedBet?.matchId === match.id && selectedBet?.selection === selection ? selectedBet.odds : getCurrentOdds(match.id)[selection];
+
+  const match = demoMatches.find(item => item.id === matchId);
+  const odds = getCurrentOdds(matchId);
   const betPayload = {
     matchId: match.id,
     matchLabel: `${match.home} vs ${match.away}`,
@@ -536,13 +568,13 @@ async function placeBet(selection = selectedBet?.selection, matchId = selectedBe
     selection,
     selectionLabel: moneylineLabel(selection),
     stake,
-    odds,
-    potentialReturn: Number((stake * odds).toFixed(2))
+    odds: odds[selection],
+    potentialReturn: Number((stake * odds[selection]).toFixed(2))
   };
+
   try {
     const payload = await apiRequest('/api/bets', { method: 'POST', body: JSON.stringify(betPayload) });
     currentUser = payload.user;
-    selectedBet = null;
     updateUserChrome();
     await renderAllDynamic();
     alert(`投注成功：${betPayload.matchLabel} · ${betPayload.selectionLabel} @ ${betPayload.odds}`);
@@ -550,7 +582,6 @@ async function placeBet(selection = selectedBet?.selection, matchId = selectedBe
     alert(error.message);
   }
 }
-
 
 async function renderMyBets() {
   const container = $('my-bets-list');
@@ -579,8 +610,7 @@ async function renderMyBets() {
 async function renderBettingPool() {
   const { bets } = await apiRequest('/api/bets/pool');
   const externalTotal = externalPools.reduce((sum, bet) => sum + Number(bet.stake || bet.amount || 0), 0);
-  const totalPoolPoints = $('total-pool-points');
-  if (totalPoolPoints) totalPoolPoints.textContent = `${bets.reduce((sum, bet) => sum + bet.stake, 0)} PTS 本站 / ${externalTotal} PTS 外部`;
+  $('total-pool-points').textContent = `${bets.reduce((sum, bet) => sum + bet.stake, 0)} PTS 本站 / ${externalTotal} PTS 外部`;
   $('betting-pool').innerHTML = demoMatches.map(match => {
     const matchBets = bets.filter(bet => bet.matchId === match.id);
     const total = matchBets.reduce((sum, bet) => sum + bet.stake, 0);
@@ -662,8 +692,6 @@ async function renderAllDynamic() {
   renderTeams();
   renderStandings();
   renderPrediction();
-  renderOutrights();
-  renderTopScorers();
   await renderMyBets();
   await renderBettingPool();
   renderLiveOdds();
@@ -682,22 +710,14 @@ function handleBodyClick(event) {
   const pick = event.target.closest('[data-match-id]');
   if (pick) {
     selectedMatchId = pick.dataset.matchId;
-    const matchSelect = $('match-select');
-    if (matchSelect) matchSelect.value = selectedMatchId;
+    $('match-select').value = selectedMatchId;
     renderSelectedMatch();
     renderOdds();
     if (pick.classList.contains('pick-match') || pick.classList.contains('result-card')) showRoute('home');
   }
 
   const odd = event.target.closest('[data-selection]');
-  if (odd) selectBet(odd.dataset.selection, odd.dataset.matchId || selectedMatchId);
-
-  const dateFilter = event.target.closest('[data-date-filter]');
-  if (dateFilter) {
-    activeDateFilter = dateFilter.dataset.dateFilter;
-    document.querySelectorAll('[data-date-filter]').forEach(button => button.classList.toggle('active', button === dateFilter));
-    renderMatches();
-  }
+  if (odd) placeBet(odd.dataset.selection, odd.dataset.matchId || selectedMatchId);
 }
 
 async function boot() {
@@ -706,16 +726,11 @@ async function boot() {
   renderMatchSelect();
   await renderAllDynamic();
 
-  const matchSelect = $('match-select');
-  if (matchSelect) matchSelect.addEventListener('change', event => {
+  $('match-select').addEventListener('change', event => {
     selectedMatchId = event.target.value;
     renderSelectedMatch();
     renderOdds();
   });
-  const stakeInput = $('stake-input');
-  if (stakeInput) stakeInput.addEventListener('input', renderBetSlip);
-  const confirmBet = $('confirm-bet');
-  if (confirmBet) confirmBet.addEventListener('click', () => placeBet());
   $('language-select').value = currentLanguage;
   applyLanguage(currentLanguage);
   $('language-select').addEventListener('change', event => { applyLanguage(event.target.value); renderAllDynamic(); });
