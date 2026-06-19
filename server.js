@@ -9,6 +9,7 @@ const CARD_WEBHOOK_SECRET = process.env.CARD_WEBHOOK_SECRET || 'dev-card-secret'
 const STARTING_POINTS = 500;
 const FREE_FIFA_API_BASE = process.env.FREE_FIFA_API_BASE || 'https://worldcup26.ir';
 const DISABLE_FREE_FIFA_API = process.env.DISABLE_FREE_FIFA_API === 'true';
+const PUBLIC_FILES = new Set(['/index.html', '/app.js', '/style.css', '/404.html']);
 
 
 const demoMatches = [
@@ -493,19 +494,31 @@ async function handleApi(req, res) {
 
 function serveStatic(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const pathname = url.pathname === '/' ? '/index.html' : decodeURIComponent(url.pathname);
+  let pathname;
+  try {
+    pathname = url.pathname === '/' ? '/index.html' : decodeURIComponent(url.pathname);
+  } catch (error) {
+    return sendError(res, 400, 'Malformed URL.');
+  }
+  if (!PUBLIC_FILES.has(pathname)) {
+    return sendNotFound(res);
+  }
   const filePath = path.normalize(path.join(__dirname, pathname));
   if (!filePath.startsWith(__dirname)) return sendError(res, 403, 'Forbidden');
   fs.readFile(filePath, (error, content) => {
     if (error) {
-      fs.readFile(path.join(__dirname, '404.html'), (notFoundError, notFoundContent) => {
-        res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(notFoundError ? 'Not found' : notFoundContent);
-      });
+      sendNotFound(res);
       return;
     }
     res.writeHead(200, { 'Content-Type': MIME[path.extname(filePath)] || 'application/octet-stream' });
     res.end(content);
+  });
+}
+
+function sendNotFound(res) {
+  fs.readFile(path.join(__dirname, '404.html'), (notFoundError, notFoundContent) => {
+    res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(notFoundError ? 'Not found' : notFoundContent);
   });
 }
 
