@@ -43,11 +43,7 @@ let teams = [
   ['Spain', 'E', 89, 'Pedri']
 ];
 
-];
 
-];
-
-];
 
 let teams = [
   ['Mexico', 'A', 84, 'S. Giménez'],
