@@ -43,6 +43,21 @@ let teams = [
   ['Spain', 'E', 89, 'Pedri']
 ];
 
+];
+
+let teams = [
+  ['Mexico', 'A', 84, 'S. Giménez'],
+  ['South Africa', 'A', 72, 'P. Tau'],
+  ['Canada', 'B', 79, 'A. Davies'],
+  ['Japan', 'B', 82, 'K. Mitoma'],
+  ['United States', 'C', 81, 'C. Pulisic'],
+  ['Germany', 'C', 88, 'J. Musiala'],
+  ['Brazil', 'D', 91, 'Vinícius Jr.'],
+  ['Morocco', 'D', 83, 'A. Hakimi'],
+  ['Argentina', 'E', 90, 'L. Messi'],
+  ['Spain', 'E', 89, 'Pedri']
+];
+
 let baseOdds = {
   'wc2026-001': { HOME: 1.86, DRAW: 3.35, AWAY: 4.20 },
   'wc2026-002': { HOME: 2.18, DRAW: 3.10, AWAY: 3.05 },
@@ -216,12 +231,104 @@ function openAuthModal(tab = 'register') {
   showModalById('authModal');
 }
 
+}
+
+function showModalById(id) {
+  const element = $(id);
+  if (!element) return;
+  if (window.bootstrap?.Modal) {
+    bootstrap.Modal.getOrCreateInstance(element).show();
+    return;
+  }
+  element.classList.add('show');
+  element.style.display = 'block';
+  element.removeAttribute('aria-hidden');
+}
+
+function hideModalById(id) {
+  const element = $(id);
+  if (!element) return;
+  if (window.bootstrap?.Modal) {
+    bootstrap.Modal.getInstance(element)?.hide();
+    return;
+  }
+  element.classList.remove('show');
+  element.style.display = 'none';
+  element.setAttribute('aria-hidden', 'true');
+}
+
+function openAuthModal(tab = 'register') {
+  const tabButton = tab === 'login' ? $('login-tab') : $('register-tab');
+  if (window.bootstrap?.Tab) bootstrap.Tab.getOrCreateInstance(tabButton).show();
+  showModalById('authModal');
+}
+
 function showAuthMessage(message, type = 'success') {
   const messageBox = $('auth-message');
   messageBox.textContent = message;
   messageBox.className = `auth-message ${type}`;
   messageBox.classList.remove('d-none');
 }
+
+function hideAuthMessage() {
+  $('auth-message').classList.add('d-none');
+}
+
+function updateUserChrome() {
+  const loggedIn = Boolean(currentUser);
+  $('guest-gate').classList.toggle('d-none', loggedIn);
+  $('logout-button').classList.toggle('d-none', !loggedIn);
+  $('auth-button').classList.toggle('d-none', loggedIn);
+  $('sidebar-user-name').textContent = loggedIn ? currentUser.name : '游客模式';
+  $('sidebar-user-email').textContent = loggedIn ? currentUser.email : '注册后可开始投注';
+  $('user-points').textContent = loggedIn ? currentUser.points : 0;
+}
+
+async function registerUser(event) {
+  event.preventDefault();
+  hideAuthMessage();
+
+  try {
+    const payload = await apiRequest('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: $('register-name').value.trim(),
+        email: $('register-email').value.trim(),
+        password: $('register-password').value,
+        ageConfirmed: $('register-age').checked
+      })
+    });
+    currentUser = payload.user;
+    saveToken(payload.token);
+    updateUserChrome();
+    await renderAllDynamic();
+    showAuthMessage(`注册成功！已发放 ${STARTING_POINTS} PTS。`, 'success');
+    setTimeout(() => hideModalById('authModal'), 650);
+  } catch (error) {
+    showAuthMessage(error.message, 'error');
+  }
+}
+
+async function loginUser(event) {
+  event.preventDefault();
+  hideAuthMessage();
+
+  try {
+    const payload = await apiRequest('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email: $('login-email').value.trim(), password: $('login-password').value })
+    });
+    currentUser = payload.user;
+    saveToken(payload.token);
+    updateUserChrome();
+    await renderAllDynamic();
+    showAuthMessage(`欢迎回来，${currentUser.name}！`, 'success');
+    setTimeout(() => hideModalById('authModal'), 650);
+  } catch (error) {
+    showAuthMessage(error.message, 'error');
+  }
+}
+
 
 function openAuthModal(tab = 'register') {
   const tabButton = tab === 'login' ? $('login-tab') : $('register-tab');
