@@ -45,6 +45,8 @@ let teams = [
 
 ];
 
+];
+
 let teams = [
   ['Mexico', 'A', 84, 'S. Giménez'],
   ['South Africa', 'A', 72, 'P. Tau'],
@@ -328,6 +330,7 @@ async function loginUser(event) {
     showAuthMessage(error.message, 'error');
   }
 }
+
 
 
 function openAuthModal(tab = 'register') {
