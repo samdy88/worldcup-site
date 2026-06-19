@@ -4,7 +4,6 @@ services:
     env: node
     plan: free
     buildCommand: npm install && npm run check
-    buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/fixtures
     envVars:
