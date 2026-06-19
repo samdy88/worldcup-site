@@ -84,11 +84,13 @@ async function loadFifa2026Data() {
     predictionOverrides = predictionData.predictions || [];
     dataSources = { fixtures: fixtures.source, teams: teamData.source, standings: standingsData.source, odds: oddsData.source, pools: poolData.source, predictions: predictionData.source };
     updateDataSourceStatus();
+    updateLiveDataBanner();
     selectedMatchId = demoMatches[0]?.id || selectedMatchId;
   } catch (error) {
     console.warn('FIFA 2026 data API unavailable, using demo fallback.', error);
     dataSources = { fixtures: 'demo-fallback', teams: 'demo-fallback', standings: 'demo-fallback', odds: 'demo-fallback', pools: 'local', predictions: 'demo-model' };
     updateDataSourceStatus();
+    updateLiveDataBanner();
   }
 }
 
@@ -96,6 +98,24 @@ function updateDataSourceStatus() {
   const target = $('data-source-status');
   if (!target) return;
   target.textContent = `数据源：赛程 ${dataSources.fixtures || '-'} · 赔率 ${dataSources.odds || '-'} · 预测 ${dataSources.predictions || '-'} · 投注池 ${dataSources.pools || '-'}`;
+}
+
+
+function updateLiveDataBanner() {
+  const banner = $('live-data-banner');
+  const message = $('live-data-message');
+  if (!banner || !message) return;
+
+  const fallbackSources = Object.entries(dataSources).filter(([, source]) => String(source || '').includes('demo'));
+  const liveSources = Object.values(dataSources).filter(source => source && !String(source).includes('demo'));
+
+  if (!fallbackSources.length) {
+    banner.classList.add('d-none');
+    return;
+  }
+
+  banner.classList.remove('d-none');
+  message.textContent = `当前 ${fallbackSources.map(([key, source]) => `${key}=${source}`).join('，')}。请在部署环境配置 FREE_FIFA_API_BASE/API_SPORTS_KEY/ODDS_API_KEY/PREDICTION_API_URL/EXTERNAL_POOL_API_URL；已启用的数据源：${liveSources.join('，') || '无'}。`;
 }
 
 function moneylineLabel(selection) {

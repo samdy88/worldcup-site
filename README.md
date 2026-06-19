@@ -103,6 +103,18 @@ Content-Type: application/json
 | `POST` | `/api/bets` | 下单投注并扣除积分 |
 | `DELETE` | `/api/bets/me` | 清空当前用户投注记录 |
 
+## 为什么首页还显示演示数据
+
+GitHub 的 `Resolve conflicts` 不能忽略：只要 PR 页面显示 conflict，GitHub 就不会允许合并。必须解决 `.env.example`、`README.md`、`app.js`、`index.html`、`server.js`、`style.css` 的冲突并提交一次 merge commit。
+
+首页不是实时 FIFA 2026 数据通常有三个原因：
+
+1. 免费源 `FREE_FIFA_API_BASE=https://worldcup26.ir` 当前不可用、超时或返回非预期结构，服务端会自动回退到 `demo-fallback`。
+2. Vercel/部署环境没有配置 `API_SPORTS_KEY`、`ODDS_API_KEY`、`PREDICTION_API_URL`、`EXTERNAL_POOL_API_URL` 等变量。
+3. 只部署了静态前端，没有运行 `node server.js`，导致 `/api/*` 无法访问。
+
+页面顶部会显示“数据源”与“实时数据未启用”提示；如果看到 `demo-fallback`，就说明当前不是实时 API 数据。
+
 ## 合并冲突后前端被改乱怎么办
 
 如果 GitHub 合并冲突时 `index.html`、`style.css`、`app.js` 被目标分支覆盖，请优先保留以下 PredictWin 标识和逻辑：
