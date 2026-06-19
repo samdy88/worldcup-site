@@ -488,18 +488,11 @@ function statusLabel(match) {
 
 function renderMatches() {
   const html = demoMatches.map(match => `
-    <article class="match-card">
+ <条目类别 =“match-card”>
       <div><div class="team-name">${match.home}</div><small>${match.venue}</small><div class="match-stats">控球 ${match.stats?.possession || '-'} · 射门 ${match.stats?.shots || '-'}</div></div>
       <div class="score-pill">${match.score}</div>
       <div><div class="team-name">${match.away}</div><small>${match.group} · ${match.date} ${match.time}</small><div class="match-status ${String(match.status).toLowerCase() === 'live' ? 'live' : ''}">${statusLabel(match)}</div></div>
       <button class="btn btn-sm btn-outline-warning pick-match" data-match-id="${match.id}">${String(match.status).toLowerCase() === 'live' ? '进入直播' : '投注'}</button>
-function renderMatches() {
-  const html = demoMatches.map(match => `
-    <article class="match-card">
-      <div><div class="team-name">${match.home}</div><small>${match.venue}</small></div>
-      <div class="score-pill">${match.score}</div>
-      <div><div class="team-name">${match.away}</div><small>${match.group} · ${match.date} ${match.time}</small></div>
-      <button class="btn btn-sm btn-outline-warning pick-match" data-match-id="${match.id}">${match.status === 'live' ? '进入直播' : '投注'}</button>
     </article>
   `).join('');
 
