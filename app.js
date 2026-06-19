@@ -405,21 +405,7 @@ async function loginUser(event) {
 }
 
 
-  try {
-    const payload = await apiRequest('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email: $('login-email').value.trim(), password: $('login-password').value })
-    });
-    currentUser = payload.user;
-    saveToken(payload.token);
-    updateUserChrome();
-    await renderAllDynamic();
-    showAuthMessage(`欢迎回来，${currentUser.name}！`, 'success');
-    setTimeout(() => bootstrap.Modal.getInstance($('authModal'))?.hide(), 650);
-  } catch (error) {
-    showAuthMessage(error.message, 'error');
-  }
-}
+
 
 async function logoutUser() {
   try { await apiRequest('/api/auth/logout', { method: 'POST' }); } catch {}
