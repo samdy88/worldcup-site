@@ -87,6 +87,18 @@ const demoTeams = [
   ['England', 'L', 90, 'J. Bellingham'],
   ['Ghana', 'L', 78, 'M. Kudus'],
   ['Panama', 'L', 73, 'A. Carrasquilla']
+  { id: 'wc2026-001', date: '2026-06-11', time: '20:00', home: 'Mexico', away: 'South Africa', group: 'Group A', venue: 'Estadio Azteca', status: 'soon', score: '0 - 0' },
+  { id: 'wc2026-002', date: '2026-06-12', time: '18:00', home: 'Canada', away: 'Japan', group: 'Group B', venue: 'BMO Field', status: 'soon', score: '0 - 0' },
+  { id: 'wc2026-003', date: '2026-06-13', time: '21:00', home: 'United States', away: 'Germany', group: 'Group C', venue: 'MetLife Stadium', status: 'live', score: '1 - 1' },
+  { id: 'wc2026-004', date: '2026-06-14', time: '17:00', home: 'Brazil', away: 'Morocco', group: 'Group D', venue: 'SoFi Stadium', status: 'soon', score: '0 - 0' },
+  { id: 'wc2026-005', date: '2026-06-15', time: '19:30', home: 'Argentina', away: 'Spain', group: 'Group E', venue: 'AT&T Stadium', status: 'soon', score: '0 - 0' },
+  { id: 'wc2026-final', date: '2026-07-19', time: '19:00', home: 'TBD Finalist 1', away: 'TBD Finalist 2', group: 'Final', venue: 'MetLife Stadium', status: 'future', score: '0 - 0' }
+];
+
+const demoTeams = [
+  ['Mexico', 'A', 84, 'S. Giménez'], ['South Africa', 'A', 72, 'P. Tau'], ['Canada', 'B', 79, 'A. Davies'],
+  ['Japan', 'B', 82, 'K. Mitoma'], ['United States', 'C', 81, 'C. Pulisic'], ['Germany', 'C', 88, 'J. Musiala'],
+  ['Brazil', 'D', 91, 'Vinícius Jr.'], ['Morocco', 'D', 83, 'A. Hakimi'], ['Argentina', 'E', 90, 'L. Messi'], ['Spain', 'E', 89, 'Pedri']
 ];
 
 const demoOdds = {
@@ -132,6 +144,14 @@ function buildDemoPredictions() {
     model: poissonModelProbabilities[match.id] ? 'FIFA-2026-World Poisson sample' : 'odds-implied fallback',
     probabilities: poissonModelProbabilities[match.id] || impliedProbabilities(demoOdds[match.id] || { HOME: 2, DRAW: 3.2, AWAY: 3.4 })
   }));
+  return ['A', 'B', 'C', 'D', 'E'].map(group => ({
+    group: `Group ${group}`,
+    rows: demoTeams.filter(team => team[1] === group).map((team, index) => ({ team: team[0], played: index + 1, win: index ? 0 : 1, draw: index ? 1 : 0, loss: 0, points: index ? 1 : 3 }))
+  }));
+}
+
+function buildDemoPredictions() {
+  return demoMatches.map(match => ({ matchId: match.id, probabilities: impliedProbabilities(demoOdds[match.id] || { HOME: 2, DRAW: 3.2, AWAY: 3.4 }) }));
 }
 
 function impliedProbabilities(odds) {
@@ -221,6 +241,13 @@ async function getFixturesData() {
   }
 
   if (!process.env.API_SPORTS_KEY) return { source: 'demo-fallback', matches: demoMatches };
+  const response = await fetch(url, options);
+  if (!response.ok) throw new Error(`Provider ${url} returned ${response.status}`);
+  return response.json();
+}
+
+async function getFixturesData() {
+  if (!process.env.API_SPORTS_KEY) return { source: 'demo', matches: demoMatches };
   const payload = await fetchJson('https://v3.football.api-sports.io/fixtures?league=1&season=2026', { headers: { 'x-apisports-key': process.env.API_SPORTS_KEY } });
   const matches = (payload.response || []).map(item => ({
     id: String(item.fixture.id), date: (item.fixture.date || '').slice(0, 10), time: (item.fixture.date || '').slice(11, 16),
@@ -250,6 +277,11 @@ async function getStandingsData() {
     console.warn('[standings] free FIFA API unavailable:', error.message);
   }
   return { source: process.env.API_SPORTS_KEY ? 'api-sports-ready' : 'demo-fallback', standings: demoStandings() };
+  return { source: process.env.API_SPORTS_KEY ? 'api-sports-ready' : 'demo', teams: demoTeams };
+}
+
+async function getStandingsData() {
+  return { source: process.env.API_SPORTS_KEY ? 'api-sports-ready' : 'demo', standings: demoStandings() };
 }
 
 async function getOddsData() {

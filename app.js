@@ -19,6 +19,8 @@ const translations = {
 };
 let currentLanguage = localStorage.getItem(LANGUAGE_KEY) || 'zh';
 
+
+
 let demoMatches = [
   { id: 'wc2026-001', date: '2026-06-11', time: '20:00', home: 'Mexico', away: 'South Africa', group: 'Group A', venue: 'Estadio Azteca', status: 'soon', score: '0 - 0' },
   { id: 'wc2026-002', date: '2026-06-12', time: '18:00', home: 'Canada', away: 'Japan', group: 'Group B', venue: 'BMO Field', status: 'soon', score: '0 - 0' },
@@ -221,6 +223,19 @@ function showAuthMessage(message, type = 'success') {
   messageBox.classList.remove('d-none');
 }
 
+function openAuthModal(tab = 'register') {
+  const tabButton = tab === 'login' ? $('login-tab') : $('register-tab');
+  bootstrap.Tab.getOrCreateInstance(tabButton).show();
+  bootstrap.Modal.getOrCreateInstance($('authModal')).show();
+}
+
+function showAuthMessage(message, type = 'success') {
+  const messageBox = $('auth-message');
+  messageBox.textContent = message;
+  messageBox.className = `auth-message ${type}`;
+  messageBox.classList.remove('d-none');
+}
+
 function hideAuthMessage() {
   $('auth-message').classList.add('d-none');
 }
@@ -255,6 +270,7 @@ async function registerUser(event) {
     await renderAllDynamic();
     showAuthMessage(`注册成功！已发放 ${STARTING_POINTS} PTS。`, 'success');
     setTimeout(() => hideModalById('authModal'), 650);
+    setTimeout(() => bootstrap.Modal.getInstance($('authModal'))?.hide(), 650);
   } catch (error) {
     showAuthMessage(error.message, 'error');
   }
@@ -275,6 +291,23 @@ async function loginUser(event) {
     await renderAllDynamic();
     showAuthMessage(`欢迎回来，${currentUser.name}！`, 'success');
     setTimeout(() => hideModalById('authModal'), 650);
+  } catch (error) {
+    showAuthMessage(error.message, 'error');
+  }
+}
+
+
+  try {
+    const payload = await apiRequest('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email: $('login-email').value.trim(), password: $('login-password').value })
+    });
+    currentUser = payload.user;
+    saveToken(payload.token);
+    updateUserChrome();
+    await renderAllDynamic();
+    showAuthMessage(`欢迎回来，${currentUser.name}！`, 'success');
+    setTimeout(() => bootstrap.Modal.getInstance($('authModal'))?.hide(), 650);
   } catch (error) {
     showAuthMessage(error.message, 'error');
   }
@@ -366,6 +399,13 @@ function renderMatches() {
       <div class="score-pill">${match.score}</div>
       <div><div class="team-name">${match.away}</div><small>${match.group} · ${match.date} ${match.time}</small><div class="match-status ${String(match.status).toLowerCase() === 'live' ? 'live' : ''}">${statusLabel(match)}</div></div>
       <button class="btn btn-sm btn-outline-warning pick-match" data-match-id="${match.id}">${String(match.status).toLowerCase() === 'live' ? '进入直播' : '投注'}</button>
+function renderMatches() {
+  const html = demoMatches.map(match => `
+    <article class="match-card">
+      <div><div class="team-name">${match.home}</div><small>${match.venue}</small></div>
+      <div class="score-pill">${match.score}</div>
+      <div><div class="team-name">${match.away}</div><small>${match.group} · ${match.date} ${match.time}</small></div>
+      <button class="btn btn-sm btn-outline-warning pick-match" data-match-id="${match.id}">${match.status === 'live' ? '进入直播' : '投注'}</button>
     </article>
   `).join('');
 
@@ -373,6 +413,7 @@ function renderMatches() {
   $('schedule-list').innerHTML = html;
   const today = new Date().toISOString().slice(0, 10);
   $('today-count').textContent = demoMatches.filter(match => match.date === today || String(match.status).toLowerCase() === 'live').length;
+  $('today-count').textContent = demoMatches.filter(match => match.date <= '2026-06-18').length;
 }
 
 function renderTeams() {
@@ -383,6 +424,7 @@ function renderTeams() {
       <p class="mb-2 text-secondary">核心球员：${team[3]}</p>
       <div class="meter"><span style="width:${team[2]}%"></span></div>
       <div class="team-meta"><span>Group ${team[1]}</span><span>Power ${team[2]}</span><span>FIFA 2026</span></div>
+      <small>综合实力 ${team[2]}</small>
     </article>
   `).join('');
 }
@@ -399,6 +441,9 @@ function renderStandings() {
       <div class="standing-row text-secondary"><span>Team</span><b>场</b><b>胜</b><b>平</b><b>净</b><b>分</b></div>
       ${group.rows.map(row => `
         <div class="standing-row"><span>${row.team}</span><b>${row.played}</b><b>${row.win}</b><b>${row.draw}</b><b>${row.gd ?? 0}</b><b>${row.points}</b></div>
+      <div class="standing-row text-secondary"><span>Team</span><b>场</b><b>胜</b><b>平</b><b>负</b><b>分</b></div>
+      ${group.rows.map(row => `
+        <div class="standing-row"><span>${row.team}</span><b>${row.played}</b><b>${row.win}</b><b>${row.draw}</b><b>${row.loss}</b><b>${row.points}</b></div>
       `).join('')}
     </article>
   `).join('');
@@ -423,6 +468,7 @@ function renderPrediction() {
           <div class="prob-row"><span>${moneylineLabel(selection)}</span><div class="meter"><span style="width:${probabilities[selection]}%"></span></div><b>${probabilities[selection]}%</b></div>
         `).join('')}
         <small class="text-warning">推荐：${moneylineLabel(top[0])}</small><small class="prediction-model">模型：${predictionOverrides.find(item => item.matchId === match.id)?.model || 'FIFA-2026-World / Odds implied'}</small>
+        <small class="text-warning">推荐：${moneylineLabel(top[0])}</small>
       </article>
     `;
   }).join('');
@@ -546,6 +592,7 @@ async function redeemCard() {
     updateUserChrome();
     $('card-code').value = '';
     hideModalById('walletModal');
+    bootstrap.Modal.getInstance($('walletModal'))?.hide();
     alert(`卡密兑换成功：+${payload.card.points} PTS。`);
   } catch (error) {
     alert(error.message);
@@ -625,6 +672,8 @@ async function boot() {
     handleBodyClick(event);
   });
   showPromoModal();
+
+  document.body.addEventListener('click', handleBodyClick);
   setInterval(() => {
     renderOdds();
     renderLiveOdds();
@@ -633,3 +682,4 @@ async function boot() {
 }
 
 document.addEventListener('DOMContentLoaded', boot);
+
