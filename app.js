@@ -57,6 +57,128 @@ let dataSources = {};
 
 let currentUser = null;
 let selectedMatchId = demoMatches[0].id;
+let selectedBet = null;
+let activeDateFilter = 'today';
+let outrights = [];
+let topScorers = [];
+
+const $ = id => document.getElementById(id);
+
+async function apiRequest(path, options = {}) {
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  const token = localStorage.getItem(STORAGE_KEYS.token);
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || '服务器请求失败。');
+  return payload;
+}
+
+function saveToken(token) {
+  localStorage.setItem(STORAGE_KEYS.token, token);
+}
+
+function clearToken() {
+  localStorage.removeItem(STORAGE_KEYS.token);
+}
+
+
+async function loadFifa2026Data() {
+  try {
+    const [fixtures, teamData, standingsData, oddsData, poolData, predictionData, outrightData, scorerData] = await Promise.all([
+      apiRequest('/api/fixtures'),
+      apiRequest('/api/teams'),
+      apiRequest('/api/standings'),
+      apiRequest('/api/odds'),
+      apiRequest('/api/external-pools'),
+      apiRequest('/api/predictions'),
+      apiRequest('/api/outrights').catch(() => ({ markets: [] })),
+      apiRequest('/api/top-scorers').catch(() => ({ players: [] }))
+    ]);
+    if (fixtures.matches?.length) demoMatches = fixtures.matches;
+    if (teamData.teams?.length) teams = teamData.teams;
+    if (standingsData.standings?.length) standingsGroups = standingsData.standings;
+    if (oddsData.oddsByMatchId) baseOdds = oddsData.oddsByMatchId;
+    externalPools = poolData.pools || [];
+    predictionOverrides = predictionData.predictions || [];
+    outrights = outrightData.markets || [];
+    topScorers = scorerData.players || [];
+    dataSources = { fixtures: fixtures.source, teams: teamData.source, standings: standingsData.source, odds: oddsData.source, pools: poolData.source, predictions: predictionData.source };
+    updateDataSourceStatus();
+    updateLiveDataBanner();
+    selectedMatchId = demoMatches[0]?.id || selectedMatchId;
+  } catch (error) {
+    console.warn('FIFA 2026 data API unavailable, using demo fallback.', error);
+    dataSources = { fixtures: 'demo-fallback', teams: 'demo-fallback', standings: 'demo-fallback', odds: 'demo-fallback', pools: 'local', predictions: 'demo-model' };
+    updateDataSourceStatus();
+    updateLiveDataBanner();
+  }
+}
+
+function updateDataSourceStatus() {
+  const target = $('data-source-status');
+  if (!target) return;
+  target.textContent = `数据源：赛程 ${dataSources.fixtures || '-'} · 赔率 ${dataSources.odds || '-'} · 预测 ${dataSources.predictions || '-'} · 投注池 ${dataSources.pools || '-'}`;
+}
+
+
+function updateLiveDataBanner() {
+  const banner = $('live-data-banner');
+  const message = $('live-data-message');
+  if (!banner || !message) return;
+
+  const fallbackSources = Object.entries(dataSources).filter(([, source]) => String(source || '').includes('demo'));
+  const liveSources = Object.values(dataSources).filter(source => source && !String(source).includes('demo'));
+
+  if (!fallbackSources.length) {
+    banner.classList.add('d-none');
+    return;
+  }
+
+  banner.classList.remove('d-none');
+  message.textContent = `当前 ${fallbackSources.map(([key, source]) => `${key}=${source}`).join('，')}。请在部署环境配置 FREE_FIFA_API_BASE/API_SPORTS_KEY/ODDS_API_KEY/PREDICTION_API_URL/EXTERNAL_POOL_API_URL；已启用的数据源：${liveSources.join('，') || '无'}。`;
+}
+
+
+function t(key) {
+  return (translations[currentLanguage] || translations.zh)[key] || translations.zh[key] || key;
+}
+
+function applyLanguage(language = currentLanguage) {
+  currentLanguage = translations[language] ? language : 'zh';
+  localStorage.setItem(LANGUAGE_KEY, currentLanguage);
+  document.documentElement.lang = currentLanguage === 'zh' ? 'zh-CN' : currentLanguage;
+  document.documentElement.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
+  const navTexts = t('nav');
+  document.querySelectorAll('.side-nav a').forEach((link, index) => { link.textContent = navTexts[index] || link.textContent; });
+  $('site-search').placeholder = t('search');
+  $('auth-button').textContent = t('auth');
+  $('logout-button').textContent = t('logout');
+  document.querySelector('.topbar h1').textContent = t('title');
+  $('guest-gate').querySelector('h2').textContent = t('guestTitle');
+  $('guest-gate').querySelector('button').textContent = t('guestCta');
+  document.querySelector('[data-page="schedule"] .section-heading span').textContent = t('schedule');
+  document.querySelector('[data-page="teams"] .section-heading span').textContent = t('teams');
+  document.querySelector('[data-page="standings"] .section-heading span').textContent = t('standings');
+  document.querySelector('[data-page="odds"] .section-heading span').textContent = t('odds');
+  document.querySelector('[data-page="predictions"] .section-heading span').textContent = t('predictions');
+  document.querySelector('[data-page="pool"] .section-heading span').textContent = t('pool');
+  document.querySelector('[data-page="my-bets"] .section-heading span').textContent = t('myBets');
+  $('promoModalLabel').textContent = t('promoTitle');
+  document.querySelector('.promo-body p').textContent = t('promoText');
+  document.querySelector('.promo-actions [data-auth-tab]').textContent = t('promoCta');
+  document.querySelector('.promo-actions [data-route]').textContent = t('promoOdds');
+}
+
+function showPromoModal() {
+  const match = demoMatches.find(item => item.status === 'live') || demoMatches.find(item => item.date >= '2026-06-19') || demoMatches[0];
+  if (match) {
+    $('promo-match-title').textContent = `${match.home} vs ${match.away}`;
+    $('promo-match-meta').textContent = `${match.group} · ${match.date} ${match.time} · ${match.venue}`;
+  }
+  setTimeout(() => showModalById('promoModal'), 550);
+}
 
 const $ = id => document.getElementById(id);
 

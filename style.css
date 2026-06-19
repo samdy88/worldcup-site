@@ -381,6 +381,23 @@ body {
   font-size: 12px;
   font-weight: 900;
 }
+.promo-body h2 { max-width: 720px; margin: 18px 0 12px; font-size: clamp(32px, 5vw, 56px); font-weight: 950; line-height: 1.05; }
+.promo-body p { max-width: 660px; color: #dbeafe; font-size: 18px; }
+.promo-match {
+  display: grid;
+  gap: 4px;
+  max-width: 520px;
+  margin: 22px 0;
+  padding: 18px;
+  border: 1px solid rgba(247, 201, 107, 0.36);
+  border-radius: 22px;
+  background: rgba(2, 6, 23, 0.48);
+}
+.promo-match span { color: var(--gold); font-weight: 900; }
+.promo-match strong { font-size: 24px; }
+.promo-match small,
+.promo-disclaimer { color: var(--muted); }
+.promo-actions { display: flex; gap: 12px; flex-wrap: wrap; margin: 18px 0 10px; }
 
 .match-status.live { background: rgba(239, 68, 68, 0.18); color: #fecaca; }
 .match-stats { color: var(--muted); font-size: 12px; }
