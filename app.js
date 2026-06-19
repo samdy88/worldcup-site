@@ -19,8 +19,6 @@ const translations = {
 };
 let currentLanguage = localStorage.getItem(LANGUAGE_KEY) || 'zh';
 
-
-
 let demoMatches = [
   { id: 'wc2026-001', date: '2026-06-11', time: '20:00', home: 'Mexico', away: 'South Africa', group: 'Group A', venue: 'Estadio Azteca', status: 'soon', score: '0 - 0' },
   { id: 'wc2026-002', date: '2026-06-12', time: '18:00', home: 'Canada', away: 'Japan', group: 'Group B', venue: 'BMO Field', status: 'soon', score: '0 - 0' },
@@ -42,8 +40,6 @@ let teams = [
   ['Argentina', 'E', 90, 'L. Messi'],
   ['Spain', 'E', 89, 'Pedri']
 ];
-
-
 
 let baseOdds = {
   'wc2026-001': { HOME: 1.86, DRAW: 3.35, AWAY: 4.20 },
@@ -212,50 +208,6 @@ function hideModalById(id) {
   element.setAttribute('aria-hidden', 'true');
 }
 
-
-function hideModalById(id) {
-  const element = $(id);
-  if (!element) return;
-  if (window.bootstrap?.Modal) {
-    bootstrap.Modal.getInstance(element)?.hide();
-    return;
-  }
-  element.classList.remove('show');
-  element.style.display = 'none';
-  element.setAttribute('aria-hidden', 'true');
-}
-
-function openAuthModal(tab = 'register') {
-  const tabButton = tab === 'login' ? $('login-tab') : $('register-tab');
-  if (window.bootstrap?.Tab) bootstrap.Tab.getOrCreateInstance(tabButton).show();
-  showModalById('authModal');
-}
-
-
-function showModalById(id) {
-  const element = $(id);
-  if (!element) return;
-  if (window.bootstrap?.Modal) {
-    bootstrap.Modal.getOrCreateInstance(element).show();
-    return;
-  }
-  element.classList.add('show');
-  element.style.display = 'block';
-  element.removeAttribute('aria-hidden');
-}
-
-function hideModalById(id) {
-  const element = $(id);
-  if (!element) return;
-  if (window.bootstrap?.Modal) {
-    bootstrap.Modal.getInstance(element)?.hide();
-    return;
-  }
-  element.classList.remove('show');
-  element.style.display = 'none';
-  element.setAttribute('aria-hidden', 'true');
-}
-
 function openAuthModal(tab = 'register') {
   const tabButton = tab === 'login' ? $('login-tab') : $('register-tab');
   if (window.bootstrap?.Tab) bootstrap.Tab.getOrCreateInstance(tabButton).show();
@@ -327,85 +279,6 @@ async function loginUser(event) {
     showAuthMessage(error.message, 'error');
   }
 }
-
-
-
-
-function openAuthModal(tab = 'register') {
-  const tabButton = tab === 'login' ? $('login-tab') : $('register-tab');
-  bootstrap.Tab.getOrCreateInstance(tabButton).show();
-  bootstrap.Modal.getOrCreateInstance($('authModal')).show();
-}
-
-function showAuthMessage(message, type = 'success') {
-  const messageBox = $('auth-message');
-  messageBox.textContent = message;
-  messageBox.className = `auth-message ${type}`;
-  messageBox.classList.remove('d-none');
-}
-
-function hideAuthMessage() {
-  $('auth-message').classList.add('d-none');
-}
-
-function updateUserChrome() {
-  const loggedIn = Boolean(currentUser);
-  $('guest-gate').classList.toggle('d-none', loggedIn);
-  $('logout-button').classList.toggle('d-none', !loggedIn);
-  $('auth-button').classList.toggle('d-none', loggedIn);
-  $('sidebar-user-name').textContent = loggedIn ? currentUser.name : '游客模式';
-  $('sidebar-user-email').textContent = loggedIn ? currentUser.email : '注册后可开始投注';
-  $('user-points').textContent = loggedIn ? currentUser.points : 0;
-}
-
-async function registerUser(event) {
-  event.preventDefault();
-  hideAuthMessage();
-
-  try {
-    const payload = await apiRequest('/api/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
-        name: $('register-name').value.trim(),
-        email: $('register-email').value.trim(),
-        password: $('register-password').value,
-        ageConfirmed: $('register-age').checked
-      })
-    });
-    currentUser = payload.user;
-    saveToken(payload.token);
-    updateUserChrome();
-    await renderAllDynamic();
-    showAuthMessage(`注册成功！已发放 ${STARTING_POINTS} PTS。`, 'success');
-    setTimeout(() => hideModalById('authModal'), 650);
-    setTimeout(() => bootstrap.Modal.getInstance($('authModal'))?.hide(), 650);
-  } catch (error) {
-    showAuthMessage(error.message, 'error');
-  }
-}
-
-async function loginUser(event) {
-  event.preventDefault();
-  hideAuthMessage();
-
-  try {
-    const payload = await apiRequest('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email: $('login-email').value.trim(), password: $('login-password').value })
-    });
-    currentUser = payload.user;
-    saveToken(payload.token);
-    updateUserChrome();
-    await renderAllDynamic();
-    showAuthMessage(`欢迎回来，${currentUser.name}！`, 'success');
-    setTimeout(() => hideModalById('authModal'), 650);
-  } catch (error) {
-    showAuthMessage(error.message, 'error');
-  }
-}
-
-
-
 
 async function logoutUser() {
   try { await apiRequest('/api/auth/logout', { method: 'POST' }); } catch {}
@@ -488,7 +361,7 @@ function statusLabel(match) {
 
 function renderMatches() {
   const html = demoMatches.map(match => `
- <条目类别 =“match-card”>
+    <article class="match-card">
       <div><div class="team-name">${match.home}</div><small>${match.venue}</small><div class="match-stats">控球 ${match.stats?.possession || '-'} · 射门 ${match.stats?.shots || '-'}</div></div>
       <div class="score-pill">${match.score}</div>
       <div><div class="team-name">${match.away}</div><small>${match.group} · ${match.date} ${match.time}</small><div class="match-status ${String(match.status).toLowerCase() === 'live' ? 'live' : ''}">${statusLabel(match)}</div></div>
@@ -500,7 +373,6 @@ function renderMatches() {
   $('schedule-list').innerHTML = html;
   const today = new Date().toISOString().slice(0, 10);
   $('today-count').textContent = demoMatches.filter(match => match.date === today || String(match.status).toLowerCase() === 'live').length;
-  $('today-count').textContent = demoMatches.filter(match => match.date <= '2026-06-18').length;
 }
 
 function renderTeams() {
@@ -511,7 +383,6 @@ function renderTeams() {
       <p class="mb-2 text-secondary">核心球员：${team[3]}</p>
       <div class="meter"><span style="width:${team[2]}%"></span></div>
       <div class="team-meta"><span>Group ${team[1]}</span><span>Power ${team[2]}</span><span>FIFA 2026</span></div>
-      <small>综合实力 ${team[2]}</small>
     </article>
   `).join('');
 }
@@ -523,7 +394,7 @@ function renderStandings() {
   }));
 
   $('standings-content').innerHTML = groups.map(group => `
- <条目类别 =“站立牌”>
+    <article class="standing-card">
       <strong>${group.group}</strong>
       <div class="standing-row text-secondary"><span>Team</span><b>场</b><b>胜</b><b>平</b><b>净</b><b>分</b></div>
       ${group.rows.map(row => `
@@ -552,7 +423,6 @@ function renderPrediction() {
           <div class="prob-row"><span>${moneylineLabel(selection)}</span><div class="meter"><span style="width:${probabilities[selection]}%"></span></div><b>${probabilities[selection]}%</b></div>
         `).join('')}
         <small class="text-warning">推荐：${moneylineLabel(top[0])}</small><small class="prediction-model">模型：${predictionOverrides.find(item => item.matchId === match.id)?.model || 'FIFA-2026-World / Odds implied'}</small>
-        <small class="text-warning">推荐：${moneylineLabel(top[0])}</small>
       </article>
     `;
   }).join('');
@@ -676,7 +546,6 @@ async function redeemCard() {
     updateUserChrome();
     $('card-code').value = '';
     hideModalById('walletModal');
-    bootstrap.Modal.getInstance($('walletModal'))?.hide();
     alert(`卡密兑换成功：+${payload.card.points} PTS。`);
   } catch (error) {
     alert(error.message);
@@ -756,8 +625,6 @@ async function boot() {
     handleBodyClick(event);
   });
   showPromoModal();
-
-  document.body.addEventListener('click', handleBodyClick);
   setInterval(() => {
     renderOdds();
     renderLiveOdds();
@@ -766,4 +633,3 @@ async function boot() {
 }
 
 document.addEventListener('DOMContentLoaded', boot);
-
