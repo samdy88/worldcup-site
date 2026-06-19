@@ -27,6 +27,19 @@ npm start
 
 ## Render 部署必须选择 Node Web Service
 
+
+### Render 日志里 `Checking out commit ...` 不是最新 commit
+
+Render 每次部署日志都会显示类似 `Checking out commit 79e8c04... in branch main`。如果这个 SHA 不是你刚合并/推送的最新 commit，Render 就会继续部署旧代码，即使 PR 里已经修好了也会失败。
+
+处理步骤：
+
+1. 在 GitHub PR 页面确认最新 commit 已经合并到 Render 连接的分支，通常是 `main`。
+2. Render 服务的 **Settings → Branch** 必须指向同一个分支。
+3. 如果你还在 PR 分支测试，请把 Render 的 Branch 临时改成 PR 分支，或先把 PR 合并到 `main`。
+4. 重新点 **Manual Deploy → Clear build cache & deploy**，再看日志里的 `Checking out commit ...` 是否已经变成最新 commit。
+5. 如果日志仍然显示旧 SHA，说明 Render 没连到正确仓库/分支，或者 GitHub PR 还没合并。
+
 ### Render 显示 `Exited with status 1` / `SyntaxError` 怎么处理
 
 如果日志里出现 `SyntaxError: Unexpected token`，说明 Render 当前部署的 commit 里的 JS 没通过语法检查。处理方式：
