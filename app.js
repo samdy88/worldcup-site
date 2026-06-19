@@ -47,6 +47,8 @@ let teams = [
 
 ];
 
+];
+
 let teams = [
   ['Mexico', 'A', 84, 'S. Giménez'],
   ['South Africa', 'A', 72, 'P. Tau'],
@@ -227,6 +229,20 @@ function hideModalById(id) {
   element.setAttribute('aria-hidden', 'true');
 }
 
+}
+
+function hideModalById(id) {
+  const element = $(id);
+  if (!element) return;
+  if (window.bootstrap?.Modal) {
+    bootstrap.Modal.getInstance(element)?.hide();
+    return;
+  }
+  element.classList.remove('show');
+  element.style.display = 'none';
+  element.setAttribute('aria-hidden', 'true');
+}
+
 function openAuthModal(tab = 'register') {
   const tabButton = tab === 'login' ? $('login-tab') : $('register-tab');
   if (window.bootstrap?.Tab) bootstrap.Tab.getOrCreateInstance(tabButton).show();
@@ -330,6 +346,7 @@ async function loginUser(event) {
     showAuthMessage(error.message, 'error');
   }
 }
+
 
 
 

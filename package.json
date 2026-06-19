@@ -1,4 +1,16 @@
 {
+  "name": "predictwin-fifa-2026",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PredictWin FIFA 2026 demo betting site with a Node API and SPA frontend.",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check app.js && node --check server.js"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": "20.x"
+  }
  "name": "predictwin-fifa-2026",
  "version": "1.0.0",
  "private": true,
