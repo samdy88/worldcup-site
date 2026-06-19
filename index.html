@@ -3,141 +3,212 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>2026 FIFA Dream Football</title>
+  <title>PredictWin</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous" />
   <link rel="stylesheet" href="./style.css" />
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
-  <script type="module" crossorigin src="https://widgets.api-sports.io/3.1.0/widgets.js"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
-  <nav class="header navbar navbar-expand-lg sticky-top">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="#home">WIN 2026</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="mainNav">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item"><a class="nav-link active" href="#home" data-route="home">赛程/比分</a></li>
-          <li class="nav-item"><a class="nav-link" href="#standings" data-route="standings">排行榜</a></li>
-          <li class="nav-item"><a class="nav-link" href="#pool" data-route="pool">投注池</a></li>
-          <li class="nav-item"><a class="nav-link" href="#my-bets" data-route="my-bets">我的投注</a></li>
-          <li class="nav-item"><a class="nav-link" href="#compliance" data-route="compliance">合规说明</a></li>
-        </ul>
-        <form class="d-flex me-3" role="search" id="search-form">
-          <input id="site-search" class="form-control form-control-sm search-input" type="search" placeholder="搜索球队 / 比赛 / 日期" aria-label="搜索球队、比赛或日期" autocomplete="off" />
-        </form>
-        <span class="navbar-text text-warning font-monospace fs-6 me-3">PTS: <span id="user-points" class="fw-bold text-white">0</span></span>
-        <button class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#authModal" id="auth-button">登录 / 注册</button>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="主导航">
+      <a class="brand" href="#home" data-route="home">
+        <span class="brand-mark">⚽</span>
+        <span>PredictWin<br><small>FIFA 2026 ONLY</small></span>
+      </a>
+
+      <nav class="side-nav">
+        <a class="active" href="#home" data-route="home">🏟️ 首页大厅</a>
+        <a href="#schedule" data-route="schedule">📅 赛程比分</a>
+        <a href="#teams" data-route="teams">🛡️ 球队</a>
+        <a href="#standings" data-route="standings">🏆 排行榜</a>
+        <a href="#odds" data-route="odds">📈 实时赔率</a>
+        <a href="#predictions" data-route="predictions">🤖 预测</a>
+        <a href="#pool" data-route="pool">💰 投注池</a>
+        <a href="#my-bets" data-route="my-bets">🎫 我的投注</a>
+      </nav>
+
+      <div class="user-panel" id="user-panel">
+        <small>当前玩家</small>
+        <strong id="sidebar-user-name">游客模式</strong>
+        <span id="sidebar-user-email">注册后可开始投注</span>
       </div>
-    </div>
-  </nav>
 
-  <main class="content p-3">
-    <section id="compliance-banner" class="alert alert-warning border-warning" role="alert">
-      <strong>合规边界：</strong>当前版本仅实现模拟积分投注技巧原型，不提供真钱下注、提现或现金网博流程。任何卡密购买、现金兑换、派奖或客服提现能力必须在取得适用司法辖区牌照、KYC/AML、年龄验证与法律审查后由服务端实现。
-    </section>
+      <div class="sidebar-card">
+        <small>可用模拟余额</small>
+        <strong><span id="user-points">0</span> PTS</strong>
+        <button class="btn btn-sm btn-gold w-100 mt-2" data-bs-toggle="modal" data-bs-target="#walletModal">充值积分</button>
+      </div>
+    </aside>
 
-    <section id="search-results" class="app-card d-none" aria-live="polite">
-      <div class="section-title">搜索结果</div>
-      <div id="search-results-list" class="result-grid"></div>
-    </section>
+    <main class="main-panel">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow mb-1">2026 FIFA WORLD CUP · USA / MEXICO / CANADA</p>
+          <h1>PredictWin · 2026 FIFA 投注</h1>
+        </div>
+        <form id="search-form" class="search-box" role="search">
+          <span>⌕</span>
+          <input id="site-search" type="search" placeholder="搜索球队、比赛、场馆、日期" autocomplete="off" />
+        </form>
+        <div class="auth-actions">
+          <button class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#authModal" id="auth-button">登录 / 注册</button>
+          <button class="btn btn-outline-warning d-none" id="logout-button">退出</button>
+        </div>
+      </header>
 
-    <section class="route-page" data-page="home">
-      <div class="row g-3">
-        <aside class="col-lg-3">
-          <div id="leagues-list" class="app-card widget-shell">
-            <div class="section-title">联赛 / 赛事</div>
-            <api-sports-widget data-type="leagues"></api-sports-widget>
-          </div>
-          <div class="app-card mt-3">
-            <div class="section-title">🔑 卡密积分充值</div>
-            <p class="small text-secondary mb-2">仅用于模拟积分；现金兑换功能未实现。</p>
-            <div class="input-group input-group-sm">
-              <input type="text" id="card-code" class="form-control bg-dark text-white border-secondary" placeholder="Card Password" />
-              <button class="btn btn-gold" id="redeem-card">REDEEM</button>
+      <section class="frontend-identity" aria-label="PredictWin frontend identity">
+        <div>
+          <span class="identity-kicker">PredictWin UI v2</span>
+          <strong>2026 FIFA 专属投注平台</strong>
+          <small>赛程 / 球队 / 排行榜 / 实时赔率 / 预测 / 投注池 / 卡密积分</small><small id="data-source-status">数据源加载中…</small>
+        </div>
+        <div class="identity-pills">
+          <span>API Ready</span>
+          <span>Match-bound Bets</span>
+          <span>Card Redeem</span>
+        </div>
+      </section>
+
+      <section id="compliance-banner" class="notice" role="alert">
+        <strong>演示说明：</strong>PredictWin 只做 2026 FIFA 投注：赛程比分、球队、排行榜、实时赔率、预测、投注池与下注均绑定 FIFA 2026 比赛。当前仍为模拟积分演示，不提供提现、现金兑换或派奖。
+      </section>
+
+      <section id="live-data-banner" class="live-data-banner d-none" role="status">
+        <strong>实时数据未启用：</strong><span id="live-data-message">正在检查数据源…</span>
+      </section>
+
+      <section id="guest-gate" class="guest-gate">
+        <div>
+          <p class="eyebrow">立即开始</p>
+          <h2>注册 30 秒，领取 500 PTS 试玩积分</h2>
+          <p>创建本地演示账号后即可投注、查看我的投注、参与投注池。账号和投注记录会保存在当前浏览器。</p>
+        </div>
+        <button class="btn btn-gold btn-lg" data-bs-toggle="modal" data-bs-target="#authModal" data-auth-tab="register">免费注册试玩</button>
+      </section>
+
+      <section id="search-results" class="glass-card d-none" aria-live="polite">
+        <div class="section-heading">
+          <span>搜索结果</span>
+          <small id="search-count"></small>
+        </div>
+        <div id="search-results-list" class="result-grid"></div>
+      </section>
+
+      <section class="route-page" data-page="home">
+        <div class="hero-grid">
+          <article class="hero-card">
+            <p class="eyebrow">精选焦点赛</p>
+            <h2 id="hero-match-title">Mexico vs South Africa</h2>
+            <p id="hero-match-meta">Group A · 2026-06-11 · Estadio Azteca</p>
+            <div class="hero-score"><span id="hero-home-score">0</span><small>LIVE ODDS</small><span id="hero-away-score">0</span></div>
+            <div id="hero-odds" class="quick-odds"></div>
+          </article>
+          <article class="stat-card"><span>总投注池</span><strong id="total-pool-points">0 PTS</strong><small>全部本地玩家汇总</small></article>
+          <article class="stat-card"><span>最高胜率</span><strong id="top-pick">--</strong><small>模型预测</small></article>
+          <article class="stat-card"><span>今日赛事</span><strong id="today-count">0</strong><small>含即将开赛</small></article>
+        </div>
+
+        <div class="content-grid mt-4">
+          <section class="glass-card span-2">
+            <div class="section-heading">
+              <span>热门赛程 / 比分</span>
+              <button class="text-button" data-route="schedule">查看全部</button>
             </div>
-          </div>
-        </aside>
+            <div id="featured-matches" class="match-list"></div>
+          </section>
 
-        <section class="col-lg-5">
-          <div id="games-list" class="app-card widget-shell">
-            <div class="section-title">赛程 / 比分</div>
-            <div id="games-widget-container">
-              <api-sports-widget data-type="games"></api-sports-widget>
+          <aside class="glass-card">
+            <div class="section-heading">
+              <span>快速投注</span>
+              <small>选择赔率即下单</small>
             </div>
-          </div>
-        </section>
-
-        <aside class="col-lg-4">
-          <div class="app-card">
-            <div class="section-title">🔥 实时赔率与预测</div>
-            <label for="match-select" class="form-label small text-secondary">选择比赛</label>
+            <label for="match-select" class="form-label small text-secondary">比赛</label>
             <select id="match-select" class="form-select form-select-sm mb-3"></select>
             <div id="selected-match-card" class="selected-match mb-3"></div>
             <div id="odds-panel" class="odds-grid mb-3"></div>
-            <div class="input-group input-group-sm mb-3">
+            <div class="input-group input-group-sm">
               <span class="input-group-text">投注积分</span>
               <input id="stake-input" type="number" min="1" step="1" value="10" class="form-control" />
             </div>
-            <div class="small text-secondary">下注时会保存比赛、选项、赔率快照和投注积分，可在“我的投注”查看。</div>
-          </div>
+          </aside>
+        </div>
+      </section>
 
-          <div id="game-content" class="app-card widget-shell mt-3">
-            <div class="section-title">比赛详情</div>
-            <api-sports-widget data-type="game" data-game-id="1037231"></api-sports-widget>
-          </div>
-        </aside>
-      </div>
-    </section>
-
-    <section class="route-page d-none" data-page="standings">
-      <div class="row g-3">
-        <div class="col-lg-8"><div class="app-card widget-shell"><div class="section-title">世界杯排行榜</div><div id="standings-content"></div></div></div>
-        <div class="col-lg-4"><div class="app-card widget-shell"><div class="section-title">球队资料</div><div id="team-content"></div></div></div>
-      </div>
-    </section>
-
-    <section class="route-page d-none" data-page="pool">
-      <div class="app-card">
-        <div class="d-flex justify-content-between align-items-center mb-3"><div class="section-title mb-0">投注池</div><button class="btn btn-sm btn-outline-warning" id="refresh-pool">刷新</button></div>
-        <div id="betting-pool" class="pool-list"></div>
-      </div>
-    </section>
-
-    <section class="route-page d-none" data-page="my-bets">
-      <div class="app-card">
-        <div class="d-flex justify-content-between align-items-center mb-3"><div class="section-title mb-0">我的投注</div><button class="btn btn-sm btn-outline-danger" id="clear-bets">清空本地记录</button></div>
-        <div id="my-bets-list" class="bets-list"></div>
-      </div>
-    </section>
-
-    <section class="route-page d-none" data-page="compliance">
-      <div class="app-card">
-        <div class="section-title">合规与产品边界</div>
-        <ul class="compliance-list">
-          <li>本原型不实现现金网博、提现、现金兑换、派奖或客服兑付流程。</li>
-          <li>如果未来涉及用户购买卡密后兑换积分并在赛后兑现金，必须先取得目标地区博彩/抽奖/金融相关法律意见和必要牌照。</li>
-          <li>生产版本需要年龄验证、KYC/AML、地理位置限制、风控、交易审计、负责任博彩提示和争议处理流程。</li>
-          <li>前端积分仅供演示，不可作为真实余额；真实余额必须由服务端数据库和交易流水控制。</li>
-        </ul>
-      </div>
-    </section>
-  </main>
-
-  <div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
-    <div class="modal-dialog"><div class="modal-content">
-      <div class="modal-header"><h1 class="modal-title fs-5" id="authModalLabel">登录 / 注册</h1><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
-      <div class="modal-body">
-        <p class="small text-secondary">当前为本地演示账号。生产环境应接入服务端鉴权。</p>
-        <input id="auth-name" class="form-control mb-2" placeholder="用户名" />
-        <input id="auth-email" type="email" class="form-control" placeholder="邮箱" />
-      </div>
-      <div class="modal-footer"><button type="button" class="btn btn-gold" id="save-profile" data-bs-dismiss="modal">保存本地账号</button></div>
-    </div></div>
+      <section class="route-page d-none" data-page="schedule">
+        <div class="glass-card"><div class="section-heading"><span>赛程 / 比分</span><small>小组赛到决赛</small></div><div id="schedule-list" class="match-list"></div></div>
+      </section>
+      <section class="route-page d-none" data-page="teams">
+        <div class="glass-card"><div class="section-heading"><span>球队资料</span><small>实力、身价、关键球员</small></div><div id="teams-grid" class="teams-grid"></div></div>
+      </section>
+      <section class="route-page d-none" data-page="standings">
+        <div class="glass-card"><div class="section-heading"><span>排行榜</span><small>小组积分榜</small></div><div id="standings-content" class="standings-grid"></div></div>
+      </section>
+      <section class="route-page d-none" data-page="odds">
+        <div class="glass-card"><div class="section-heading"><span>实时赔率</span><small>模拟盘口每 20 秒波动</small></div><div id="live-odds-board" class="odds-board"></div></div>
+      </section>
+      <section class="route-page d-none" data-page="predictions">
+        <div class="glass-card"><div class="section-heading"><span>AI 预测</span><small>胜平负概率与推荐</small></div><div id="prediction-board" class="prediction-grid"></div></div>
+      </section>
+      <section class="route-page d-none" data-page="pool">
+        <div class="glass-card"><div class="section-heading"><span>投注池</span><button class="btn btn-sm btn-outline-warning" id="refresh-pool">刷新</button></div><div id="betting-pool" class="pool-list"></div></div>
+      </section>
+      <section class="route-page d-none" data-page="my-bets">
+        <div class="glass-card"><div class="section-heading"><span>我的投注</span><button class="btn btn-sm btn-outline-danger" id="clear-bets">清空我的记录</button></div><div id="my-bets-list" class="bets-list"></div></div>
+      </section>
+    </main>
   </div>
 
-  <api-sports-widget data-type="config" data-sport="football" data-key="a5f67c885e08bb098a1d202408f4fedd" data-lang="en" data-url-football="https://fifa-zone.b-cdn.net/" data-theme="grey" data-show-error="false" data-show-logos="true" data-logo-url="https://media.api-sports.io" data-refresh="20" data-favorite="true" data-player-trophies="true" data-standings="true" data-player-injuries="true" data-team-squad="true" data-team-statistics="true" data-player-statistics="true" data-tab="games" data-game-tab="statistics" data-target-player="modal" data-target-league="#games-list" data-target-team="#team-content" data-target-game="#game-content" data-target-standings="#standings-content"></api-sports-widget>
+  <div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content auth-modal">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="authModalLabel">玩家登录 / 注册</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <ul class="nav nav-pills auth-tabs mb-3" id="auth-tabs" role="tablist">
+            <li class="nav-item" role="presentation"><button class="nav-link active" id="register-tab" data-bs-toggle="pill" data-bs-target="#register-pane" type="button" role="tab">注册</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" id="login-tab" data-bs-toggle="pill" data-bs-target="#login-pane" type="button" role="tab">登录</button></li>
+          </ul>
+          <div class="tab-content">
+            <form class="tab-pane fade show active" id="register-pane" role="tabpanel">
+              <p class="small text-secondary">注册成功立即发放 500 PTS 模拟积分。</p>
+              <input id="register-name" class="form-control mb-2" minlength="2" placeholder="用户名" required />
+              <input id="register-email" type="email" class="form-control mb-2" placeholder="邮箱" required />
+              <input id="register-password" type="password" class="form-control mb-2" minlength="6" placeholder="密码（至少 6 位）" required />
+              <label class="form-check small text-secondary mb-3"><input id="register-age" class="form-check-input" type="checkbox" required /> 我确认已达到所在地法定年龄，并理解当前为模拟积分演示。</label>
+              <button class="btn btn-gold w-100" type="submit">免费注册并领取积分</button>
+            </form>
+            <form class="tab-pane fade" id="login-pane" role="tabpanel">
+              <p class="small text-secondary">使用已注册邮箱和密码登录继续游玩。</p>
+              <input id="login-email" type="email" class="form-control mb-2" placeholder="邮箱" required />
+              <input id="login-password" type="password" class="form-control mb-3" placeholder="密码" required />
+              <button class="btn btn-gold w-100" type="submit">登录并进入</button>
+            </form>
+          </div>
+          <div id="auth-message" class="auth-message d-none" role="alert"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="walletModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5">积分充值</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-secondary">在第三方发卡平台购买卡密后，在这里输入卡密兑换积分。演示可用 <strong>DEMO-2026</strong> 或通过发卡平台 webhook 写入新卡密。</p>
+          <div class="input-group">
+            <input type="text" id="card-code" class="form-control" placeholder="DEMO-2026" />
+            <button class="btn btn-gold" id="redeem-card">REDEEM</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
