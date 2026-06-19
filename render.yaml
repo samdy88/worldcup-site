@@ -4,16 +4,19 @@ services:
     env: node
     plan: free
     buildCommand: npm install && npm run check
-    buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/fixtures
+    disk:
+      name: predictwin-data
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
       - key: NODE_VERSION
         value: 20
       - key: PORT
         value: 10000
       - key: DB_PATH
-        value: ./data/db.json
+        value: /var/data/db.json
       - key: CARD_WEBHOOK_SECRET
         generateValue: true
       - key: FREE_FIFA_API_BASE

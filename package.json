@@ -10,9 +10,5 @@
   "engines": {
     "node": "20.x"
   },
-  "dependencies": {},
-  "engines": {
-    "node": "20.x"
-  }
   "dependencies": {}
 }
