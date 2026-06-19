@@ -1,0 +1,16 @@
+{
+  "users": [],
+  "sessions": [],
+  "bets": [],
+  "cards": [
+    {
+      "code": "DEMO-2026",
+      "points": 100,
+      "source": "seed",
+      "status": "active",
+      "redeemedBy": null,
+      "redeemedAt": null,
+      "orderId": "seed-demo-2026"
+    }
+  ]
+}
