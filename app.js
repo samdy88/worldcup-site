@@ -180,7 +180,6 @@ function showPromoModal() {
   setTimeout(() => showModalById('promoModal'), 550);
 }
 
-const $ = id => document.getElementById(id);
 
 async function apiRequest(path, options = {}) {
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
