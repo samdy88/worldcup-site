@@ -20,6 +20,12 @@ const translations = {
 let currentLanguage = localStorage.getItem(LANGUAGE_KEY) || 'zh';
 
 let demoMatches = [
+  { id: 'wc2026-usa-aus', date: '2026-06-19', time: '14:00', home: '美国', away: '澳大利亚', group: '分组赛阶段。D组。第2轮', venue: 'Arrowhead Stadium', status: 'soon', score: '- : -', stats: { possession: '-', shots: '-', corners: '-' } },
+  { id: 'wc2026-sco-mar', date: '2026-06-19', time: '17:00', home: '苏格兰', away: '摩洛哥', group: '分组赛阶段。C组。第2轮', venue: 'AT&T Stadium', status: 'soon', score: '- : -', stats: { possession: '-', shots: '-', corners: '-' } },
+  { id: 'wc2026-bra-hai', date: '2026-06-19', time: '19:30', home: '巴西', away: '海地', group: '分组赛阶段。C组。第2轮', venue: 'SoFi Stadium', status: 'soon', score: '- : -', stats: { possession: '-', shots: '-', corners: '-' } },
+  { id: 'wc2026-tur-par', date: '2026-06-19', time: '22:00', home: '土耳其', away: '巴拉圭', group: '分组赛阶段。D组。第2轮', venue: 'MetLife Stadium', status: 'soon', score: '- : -', stats: { possession: '-', shots: '-', corners: '-' } },
+  { id: 'wc2026-sui-can', date: '2026-06-20', time: '16:00', home: '瑞士', away: '加拿大', group: '分组赛阶段。B组。第2轮', venue: 'BMO Field', status: 'soon', score: '- : -', stats: { possession: '-', shots: '-', corners: '-' } },
+  { id: 'wc2026-final', date: '2026-07-19', time: '19:00', home: '决赛球队 1', away: '决赛球队 2', group: '决赛', venue: 'MetLife Stadium', status: 'future', score: '- : -', stats: { possession: '-', shots: '-', corners: '-' } }
   { id: 'wc2026-001', date: '2026-06-11', time: '20:00', home: 'Mexico', away: 'South Africa', group: 'Group A', venue: 'Estadio Azteca', status: 'soon', score: '0 - 0' },
   { id: 'wc2026-002', date: '2026-06-12', time: '18:00', home: 'Canada', away: 'Japan', group: 'Group B', venue: 'BMO Field', status: 'soon', score: '0 - 0' },
   { id: 'wc2026-003', date: '2026-06-13', time: '21:00', home: 'United States', away: 'Germany', group: 'Group C', venue: 'MetLife Stadium', status: 'live', score: '1 - 1' },
@@ -39,6 +45,14 @@ let teams = [
   ['Morocco', 'D', 83, 'A. Hakimi'],
   ['Argentina', 'E', 90, 'L. Messi'],
   ['Spain', 'E', 89, 'Pedri']
+];
+
+let baseOdds = {
+  'wc2026-usa-aus': { HOME: 1.64, DRAW: 3.82, AWAY: 5.05 },
+  'wc2026-sco-mar': { HOME: 3.45, DRAW: 3.28, AWAY: 2.08 },
+  'wc2026-bra-hai': { HOME: 1.18, DRAW: 6.40, AWAY: 13.0 },
+  'wc2026-tur-par': { HOME: 2.20, DRAW: 3.15, AWAY: 3.25 },
+  'wc2026-sui-can': { HOME: 2.40, DRAW: 3.10, AWAY: 1.62 },
 ];
 
 
@@ -121,6 +135,7 @@ async function loadFifa2026Data() {
     dataSources = { fixtures: fixtures.source, teams: teamData.source, standings: standingsData.source, odds: oddsData.source, pools: poolData.source, predictions: predictionData.source };
     updateDataSourceStatus();
     updateLiveDataBanner();
+    selectedMatchId = demoMatches.find(match => match.date === '2026-06-19')?.id || demoMatches[0]?.id || selectedMatchId;
     selectedMatchId = demoMatches[0]?.id || selectedMatchId;
   } catch (error) {
     console.warn('FIFA 2026 data API unavailable, using demo fallback.', error);
@@ -317,6 +332,38 @@ function requireLogin(actionText = '请先注册或登录后再继续。') {
   showAuthMessage(actionText, 'error');
   openAuthModal('register');
   return false;
+}
+
+function showModalById(id) {
+  const element = $(id);
+  if (!element) return;
+  if (window.bootstrap?.Modal) {
+    bootstrap.Modal.getOrCreateInstance(element).show();
+    return;
+  }
+  element.classList.add('show');
+  element.style.display = 'block';
+  element.removeAttribute('aria-hidden');
+}
+
+function hideModalById(id) {
+  const element = $(id);
+  if (!element) return;
+  if (window.bootstrap?.Modal) {
+    bootstrap.Modal.getInstance(element)?.hide();
+    return;
+  }
+  element.classList.remove('show');
+  element.style.display = 'none';
+  element.setAttribute('aria-hidden', 'true');
+}
+
+function openAuthModal(tab = 'register') {
+  const tabButton = tab === 'login' ? $('login-tab') : $('register-tab');
+  if (window.bootstrap?.Tab) bootstrap.Tab.getOrCreateInstance(tabButton).show();
+  showModalById('authModal');
+}
+
 }
 
 function showModalById(id) {
@@ -793,6 +840,11 @@ async function placeBet(selection, matchId = selectedMatchId) {
     const payload = await apiRequest('/api/bets', { method: 'POST', body: JSON.stringify(betPayload) });
     currentUser = payload.user;
     selectedBet = null;
+  };
+  try {
+    const payload = await apiRequest('/api/bets', { method: 'POST', body: JSON.stringify(betPayload) });
+    currentUser = payload.user;
+    selectedBet = null;
     odds: odds[selection],
     potentialReturn: Number((stake * odds[selection]).toFixed(2))
   };
@@ -992,6 +1044,7 @@ async function boot() {
     if (dismiss && !window.bootstrap?.Modal) hideModalById(dismiss.closest('.modal')?.id);
     handleBodyClick(event);
   });
+  // Homepage itself is now the World Win 26 promotion page; keep the modal available but do not cover the landing view on first load.
   showPromoModal();
   setInterval(() => {
     renderOdds();

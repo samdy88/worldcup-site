@@ -28,6 +28,10 @@ const demoMatches = [
   { id: 'wc2026-014', date: '2026-06-17', time: '21:00', home: 'Iran', away: 'New Zealand', group: 'Group G', venue: 'Gillette Stadium', status: 'FT', score: '1 - 0', stats: { possession: '54% - 46%', shots: '12 - 7', corners: '5 - 2' } },
   { id: 'wc2026-015', date: '2026-06-18', time: '18:00', home: 'Spain', away: 'Cape Verde', group: 'Group H', venue: 'Hard Rock Stadium', status: 'FT', score: '3 - 0', stats: { possession: '72% - 28%', shots: '21 - 4', corners: '10 - 1' } },
   { id: 'wc2026-016', date: '2026-06-18', time: '21:00', home: 'Uruguay', away: 'Saudi Arabia', group: 'Group H', venue: 'Camping World Stadium', status: 'FT', score: '2 - 0', stats: { possession: '57% - 43%', shots: '14 - 6', corners: '5 - 3' } },
+  { id: 'wc2026-usa-aus', date: '2026-06-19', time: '14:00', home: '美国', away: '澳大利亚', group: '分组赛阶段。D组。第2轮', venue: 'Arrowhead Stadium', status: 'soon', score: '- : -', stats: { possession: '-', shots: '-', corners: '-' } },
+  { id: 'wc2026-sco-mar', date: '2026-06-19', time: '17:00', home: '苏格兰', away: '摩洛哥', group: '分组赛阶段。C组。第2轮', venue: 'AT&T Stadium', status: 'soon', score: '- : -', stats: { possession: '-', shots: '-', corners: '-' } },
+  { id: 'wc2026-bra-hai', date: '2026-06-19', time: '19:30', home: '巴西', away: '海地', group: '分组赛阶段。C组。第2轮', venue: 'SoFi Stadium', status: 'soon', score: '- : -', stats: { possession: '-', shots: '-', corners: '-' } },
+  { id: 'wc2026-tur-par', date: '2026-06-19', time: '22:00', home: '土耳其', away: '巴拉圭', group: '分组赛阶段。D组。第2轮', venue: 'MetLife Stadium', status: 'soon', score: '- : -', stats: { possession: '-', shots: '-', corners: '-' } },
   { id: 'wc2026-017', date: '2026-06-19', time: '17:00', home: 'France', away: 'Senegal', group: 'Group I', venue: 'Rose Bowl', status: 'live', score: '1 - 1', minute: 64, stats: { possession: '60% - 40%', shots: '12 - 7', corners: '6 - 2' } },
   { id: 'wc2026-018', date: '2026-06-19', time: '20:00', home: 'Norway', away: 'Suriname', group: 'Group I', venue: 'Allegiant Stadium', status: 'soon', score: '0 - 0', stats: { possession: '-', shots: '-', corners: '-' } },
   { id: 'wc2026-019', date: '2026-06-20', time: '18:00', home: 'Argentina', away: 'Algeria', group: 'Group J', venue: 'AT&T Stadium', status: 'soon', score: '0 - 0', stats: { possession: '-', shots: '-', corners: '-' } },
@@ -92,6 +96,11 @@ const demoTeams = [
 const demoOdds = {
   'wc2026-001': { HOME: 1.86, DRAW: 3.35, AWAY: 4.20 }, 'wc2026-002': { HOME: 2.18, DRAW: 3.10, AWAY: 3.05 },
   'wc2026-003': { HOME: 2.45, DRAW: 3.40, AWAY: 2.62 }, 'wc2026-004': { HOME: 1.72, DRAW: 3.85, AWAY: 5.20 },
+  'wc2026-005': { HOME: 2.55, DRAW: 3.25, AWAY: 2.70 },
+  'wc2026-usa-aus': { HOME: 1.64, DRAW: 3.82, AWAY: 5.05 },
+  'wc2026-sco-mar': { HOME: 3.45, DRAW: 3.28, AWAY: 2.08 },
+  'wc2026-bra-hai': { HOME: 1.18, DRAW: 6.40, AWAY: 13.0 },
+  'wc2026-tur-par': { HOME: 2.20, DRAW: 3.15, AWAY: 3.25 }, 'wc2026-final': { HOME: 2.05, DRAW: 3.25, AWAY: 3.45 }
   'wc2026-005': { HOME: 2.55, DRAW: 3.25, AWAY: 2.70 }, 'wc2026-final': { HOME: 2.05, DRAW: 3.25, AWAY: 3.45 }
 };
 
