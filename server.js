@@ -5,6 +5,9 @@ const crypto = require('crypto');
 
 const PORT = Number(process.env.PORT || 4173);
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data', 'db.json');
+const ROOT_DIR = path.resolve(__dirname);
+const DB_FILE_PATH = path.resolve(DB_PATH);
+const DATA_DIR = path.resolve(__dirname, 'data');
 const CARD_WEBHOOK_SECRET = process.env.CARD_WEBHOOK_SECRET || 'dev-card-secret';
 const STARTING_POINTS = 500;
 const FREE_FIFA_API_BASE = process.env.FREE_FIFA_API_BASE || 'https://worldcup26.ir';
@@ -100,7 +103,7 @@ const demoOdds = {
   'wc2026-usa-aus': { HOME: 1.64, DRAW: 3.82, AWAY: 5.05 },
   'wc2026-sco-mar': { HOME: 3.45, DRAW: 3.28, AWAY: 2.08 },
   'wc2026-bra-hai': { HOME: 1.18, DRAW: 6.40, AWAY: 13.0 },
-  'wc2026-tur-par': { HOME: 2.20, DRAW: 3.15, AWAY: 3.25 }, 'wc2026-final': { HOME: 2.05, DRAW: 3.25, AWAY: 3.45 }
+  'wc2026-tur-par': { HOME: 2.20, DRAW: 3.15, AWAY: 3.25 },
   'wc2026-005': { HOME: 2.55, DRAW: 3.25, AWAY: 2.70 }, 'wc2026-final': { HOME: 2.05, DRAW: 3.25, AWAY: 3.45 }
 };
 
@@ -541,9 +544,17 @@ async function handleApi(req, res) {
 
 function serveStatic(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const pathname = url.pathname === '/' ? '/index.html' : decodeURIComponent(url.pathname);
-  const filePath = path.normalize(path.join(__dirname, pathname));
-  if (!filePath.startsWith(__dirname)) return sendError(res, 403, 'Forbidden');
+  let pathname;
+  try {
+    pathname = url.pathname === '/' ? '/index.html' : decodeURIComponent(url.pathname);
+  } catch (error) {
+    return sendError(res, 400, 'Malformed URL encoding.');
+  }
+
+  const filePath = path.resolve(path.join(__dirname, pathname));
+  if (filePath !== ROOT_DIR && !filePath.startsWith(`${ROOT_DIR}${path.sep}`)) return sendError(res, 403, 'Forbidden');
+  if (filePath === DB_FILE_PATH || filePath.startsWith(`${DATA_DIR}${path.sep}`)) return sendError(res, 404, 'Not found');
+
   fs.readFile(filePath, (error, content) => {
     if (error) {
       fs.readFile(path.join(__dirname, '404.html'), (notFoundError, notFoundContent) => {
