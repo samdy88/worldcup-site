@@ -192,3 +192,330 @@ npm run check
 - 用户点击主胜 / 平局 / 客胜赔率后，会先加入右侧投注单；确认积分后才提交 `/api/bets`。
 - 长期投注和射手榜分别由 `/api/outrights` 与 `/api/top-scorers` 提供；没有外部 API 时使用内置 demo-market / demo-stats。
 - 该页面只参考成熟体育投注站的信息架构，不复制第三方品牌、Logo、素材或原始页面代码。
+
+```bash
+npm start
+```
+
+默认访问：<http://localhost:4173>
+
+首次启动会自动创建 `data/db.json`。该文件包含真实运行数据，已加入 `.gitignore`。
+
+
+## Render 部署必须选择 Node Web Service
+
+
+### Render 日志里 `Checking out commit ...` 不是最新 commit
+
+Render 每次部署日志都会显示类似 `Checking out commit 79e8c04... in branch main`。如果这个 SHA 不是你刚合并/推送的最新 commit，Render 就会继续部署旧代码，即使 PR 里已经修好了也会失败。
+
+处理步骤：
+
+1. 在 GitHub PR 页面确认最新 commit 已经合并到 Render 连接的分支，通常是 `main`。
+2. Render 服务的 **Settings → Branch** 必须指向同一个分支。
+3. 如果你还在 PR 分支测试，请把 Render 的 Branch 临时改成 PR 分支，或先把 PR 合并到 `main`。
+4. 重新点 **Manual Deploy → Clear build cache & deploy**，再看日志里的 `Checking out commit ...` 是否已经变成最新 commit。
+5. 如果日志仍然显示旧 SHA，说明 Render 没连到正确仓库/分支，或者 GitHub PR 还没合并。
+
+### Render 显示 `Exited with status 1` / `SyntaxError` 怎么处理
+
+如果日志里出现 `SyntaxError: Unexpected token`，说明 Render 当前部署的 commit 里的 JS 没通过语法检查。处理方式：
+
+1. 先确认 Render 连接的是包含最新修复的分支，不要只部署旧的 `main` commit。
+2. 在本地或 GitHub Codespaces 运行 `npm run check`，必须通过后再部署。
+3. 本仓库的 `render.yaml` 已把 Build Command 改成 `npm install && npm run check`，以后语法错误会在 build 阶段直接失败，不会等到服务启动才崩。
+4. 本仓库在 `package.json` 固定 Node 20.x，避免 Render 使用过新的 Node 运行环境导致排错不一致。
+
+
+如果 Render 打开后只剩一行导航、没有侧边栏、没有卡片背景，通常不是代码坏了，而是部署方式或静态资源/API 没有正确跑起来。请按下面检查：
+
+1. 在 Render 新建服务时选择 **Web Service**，不要选择 **Static Site**。本项目需要运行 Node 后端，否则 `/api/*`、卡密、登录、下注和实时数据代理都不可用。
+2. Root Directory 保持仓库根目录，Build Command 填 `npm install && npm run check`，Start Command 填 `npm start`。仓库已提供 `render.yaml`，可以直接用 Render Blueprint 导入。
+3. 部署完成后先访问 `https://你的域名/api/fixtures`：如果返回 JSON，说明 Node 后端正常；如果返回 HTML/404，说明还是静态部署或启动命令错误。
+4. 再访问 `https://你的域名/style.css` 和 `https://你的域名/app.js`：如果 CSS/JS 不是 `200`，页面就会退化成默认浏览器样式，看起来像“前端变了”。
+5. 首页顶部“数据源”会显示当前数据来源：`free-fifa-api`/`api-sports`/`the-odds-api` 代表接入成功；`demo-fallback` 代表外部 API 未配置、超时或不可用。
+
+Render 环境变量建议至少配置：
+
+```bash
+FREE_FIFA_API_BASE=https://worldcup26.ir
+API_SPORTS_KEY=你的 API-Sports key
+ODDS_API_KEY=你的 The Odds API key
+ODDS_API_SPORT_KEY=soccer_fifa_world_cup
+EXTERNAL_POOL_API_URL=你的外部投注池 JSON API
+PREDICTION_API_URL=你的预测模型 JSON API
+```
+
+## 环境变量
+
+复制 `.env.example` 后按部署环境设置：
+
+```bash
+PORT=4173
+DB_PATH=./data/db.json
+CARD_WEBHOOK_SECRET=replace-with-third-party-webhook-secret
+FREE_FIFA_API_BASE=https://worldcup26.ir # 默认免费 2026 World Cup API：/get/games /get/groups /get/teams
+PROVIDER_TIMEOUT_MS=3500                  # 外部数据源超时后回退演示数据
+API_SPORTS_KEY=                           # 备用：API-Sports 免费/试用 key，更新赛程/球队/排行榜
+ODDS_API_KEY=                           # 可接 The Odds API 免费/试用 key，更新实时赔率
+ODDS_API_SPORT_KEY=soccer_fifa_world_cup
+EXTERNAL_POOL_API_URL=                  # 其他投注网站/聚合器投注池 JSON API
+PREDICTION_API_URL=                     # world-2026-prediction-model 输出 JSON API
+```
+
+## 2026 FIFA 数据源接入
+
+- `📅 赛程比分`、`🛡️ 球队`、`🏆 排行榜`：后端提供 `/api/fixtures`、`/api/teams`、`/api/standings`，默认先接免费 `worldcup26.ir` 的 `/get/games`、`/get/teams`、`/get/groups`；该源不可用时再回退到 `API_SPORTS_KEY` 或内置演示数据。
+- `📈 实时赔率`：后端提供 `/api/odds`。配置 `ODDS_API_KEY` 与 `ODDS_API_SPORT_KEY=soccer_fifa_world_cup` 后可接 The Odds API；没有 key 时使用演示赔率。
+- `💰 投注池`：本站下注保存在 `/api/bets/pool`，同时可配置 `EXTERNAL_POOL_API_URL` 接入其他投注网站/聚合器 API，前端会展示本站积分与外部积分。
+- `🤖 预测`：后端提供 `/api/predictions`。配置 `PREDICTION_API_URL` 后可接预测模型 JSON；未配置时会使用 `samdy88/FIFA-2026-World` README 中的 Poisson 示例概率作为首轮焦点赛预测，并对其余比赛回退到赔率隐含概率。
+
+搜索支持按球队、比赛、日期、阶段和场馆匹配当前 FIFA 2026 赛程。赛程比分、球队、排行榜页面展示 48 队 / 12 组赛制，并在 fallback 数据中包含已完赛、直播中、即将开始、控球、射门、角球等比赛统计。下注必须先选择比赛，再选择主胜/平局/客胜赔率；后端保存比赛 ID、比赛名称、投注选项、积分、赔率快照、潜在返还与状态。
+
+## 多语言与免费投注弹窗
+
+- 页眉搜索框右侧提供语言切换器，支持中文、英语、西班牙语、法语、葡萄牙语、德语、阿拉伯语、日语、韩语，并会把选择保存到浏览器。
+- 用户打开首页后会自动出现“免费投注”弹窗，突出 500 PTS 新玩家奖励、今日推荐比赛和快速注册入口。
+- 为了避免 CDN 被屏蔽导致页面退化，`style.css` 现在包含 `.d-none` 与基础 modal fallback 样式。
+
+## 发卡平台接入方式
+
+### 1. 发卡平台售出卡密后回调本站
+
+让发卡平台在订单支付成功后调用：
+
+```bash
+curl -X POST http://localhost:4173/api/card-platform/cards \
+  -H 'Content-Type: application/json' \
+  -H 'x-card-platform-secret: replace-with-third-party-webhook-secret' \
+  -d '{
+    "code": "ORDER-ABC-123",
+    "points": 1000,
+    "orderId": "third-party-order-10001",
+    "buyerEmail": "buyer@example.com"
+  }'
+```
+
+服务端会把卡密写入数据库，状态为 `active`。
+
+### 2. 用户在网站兑换卡密
+
+前端会调用：
+
+```http
+POST /api/cards/redeem
+Authorization: Bearer <session-token>
+Content-Type: application/json
+
+{ "code": "ORDER-ABC-123" }
+```
+
+成功后：
+
+- 卡密状态变为 `redeemed`
+- 记录 `redeemedBy` 和 `redeemedAt`
+- 用户积分增加对应 `points`
+
+## 主要 API
+
+| Method | Path | 说明 |
+| --- | --- | --- |
+| `POST` | `/api/auth/register` | 注册用户并发放 500 PTS |
+| `POST` | `/api/auth/login` | 登录并返回 token |
+| `GET` | `/api/auth/me` | 获取当前登录用户 |
+| `POST` | `/api/auth/logout` | 退出登录 |
+| `POST` | `/api/card-platform/cards` | 发卡平台写入新卡密 |
+| `POST` | `/api/cards/redeem` | 用户兑换卡密为积分 |
+| `GET` | `/api/bets/pool` | 获取全站投注池 |
+| `GET` | `/api/bets/me` | 获取我的投注 |
+| `POST` | `/api/bets` | 下单投注并扣除积分 |
+| `DELETE` | `/api/bets/me` | 清空当前用户投注记录 |
+
+## 为什么首页还显示演示数据
+
+GitHub 的 `Resolve conflicts` 不能忽略：只要 PR 页面显示 conflict，GitHub 就不会允许合并。必须解决 `.env.example`、`README.md`、`app.js`、`index.html`、`server.js`、`style.css` 的冲突并提交一次 merge commit。
+
+首页不是实时 FIFA 2026 数据通常有三个原因：
+
+1. 免费源 `FREE_FIFA_API_BASE=https://worldcup26.ir` 当前不可用、超时或返回非预期结构，服务端会自动回退到 `demo-fallback`。
+2. Vercel/部署环境没有配置 `API_SPORTS_KEY`、`ODDS_API_KEY`、`PREDICTION_API_URL`、`EXTERNAL_POOL_API_URL` 等变量。
+3. 只部署了静态前端，没有运行 `node server.js`，导致 `/api/*` 无法访问。
+
+页面顶部会显示“数据源”与“实时数据未启用”提示；如果看到 `demo-fallback`，就说明当前不是实时 API 数据。
+
+## 合并冲突后前端被改乱怎么办
+
+如果 GitHub 合并冲突时 `index.html`、`style.css`、`app.js` 被目标分支覆盖，请优先保留以下 PredictWin 标识和逻辑：
+
+- `index.html` 保留 `<title>PredictWin</title>`、`PredictWin UI v2`、`FIFA 2026 ONLY` 和侧边栏页面。
+- `app.js` 保留 `loadFifa2026Data()`、`/api/fixtures`、`/api/odds`、`/api/bets`、`/api/cards/redeem` 等 API 驱动逻辑。
+- `style.css` 保留 `.app-shell`、`.sidebar`、`.frontend-identity`、`.hero-card`、`.odds-button`、`.pool-card` 等新版布局样式。
+
+合并后运行 `npm run check`，再启动 `npm start` 截图确认首页仍显示 PredictWin 2026 FIFA 专属投注平台。
+
+## 检查
+
+```bash
+npm run check
+```
+
+
+## WC2026 Event Center 首页
+
+首页现在采用 PredictWin 自有品牌的赛事中心结构：
+
+- 顶部是“World Win 26 / 免费投注 / Event Center v3”活动首屏，突出 500 PTS 试玩积分和 WC2026 专属投注。
+- 中间是 Top Events 盘口列表，支持今天、明天、全部切换。
+- 用户点击主胜 / 平局 / 客胜赔率后，会先加入右侧投注单；确认积分后才提交 `/api/bets`。
+- 长期投注和射手榜分别由 `/api/outrights` 与 `/api/top-scorers` 提供；没有外部 API 时使用内置 demo-market / demo-stats。
+- 该页面只参考成熟体育投注站的信息架构，不复制第三方品牌、Logo、素材或原始页面代码。
+
+处理步骤：
+
+1. 在 GitHub PR 页面确认最新 commit 已经合并到 Render 连接的分支，通常是 `main`。
+2. Render 服务的 **Settings → Branch** 必须指向同一个分支。
+3. 如果你还在 PR 分支测试，请把 Render 的 Branch 临时改成 PR 分支，或先把 PR 合并到 `main`。
+4. 重新点 **Manual Deploy → Clear build cache & deploy**，再看日志里的 `Checking out commit ...` 是否已经变成最新 commit。
+5. 如果日志仍然显示旧 SHA，说明 Render 没连到正确仓库/分支，或者 GitHub PR 还没合并。
+
+### Render 显示 `Exited with status 1` / `SyntaxError` 怎么处理
+
+如果日志里出现 `SyntaxError: Unexpected token`，说明 Render 当前部署的 commit 里的 JS 没通过语法检查。处理方式：
+
+1. 先确认 Render 连接的是包含最新修复的分支，不要只部署旧的 `main` commit。
+2. 在本地或 GitHub Codespaces 运行 `npm run check`，必须通过后再部署。
+3. 本仓库的 `render.yaml` 已把 Build Command 改成 `npm install && npm run check`，以后语法错误会在 build 阶段直接失败，不会等到服务启动才崩。
+4. 本仓库在 `package.json` 固定 Node 20.x，避免 Render 使用过新的 Node 运行环境导致排错不一致。
+
+
+如果 Render 打开后只剩一行导航、没有侧边栏、没有卡片背景，通常不是代码坏了，而是部署方式或静态资源/API 没有正确跑起来。请按下面检查：
+
+1. 在 Render 新建服务时选择 **Web Service**，不要选择 **Static Site**。本项目需要运行 Node 后端，否则 `/api/*`、卡密、登录、下注和实时数据代理都不可用。
+2. Root Directory 保持仓库根目录，Build Command 填 `npm install && npm run check`，Start Command 填 `npm start`。仓库已提供 `render.yaml`，可以直接用 Render Blueprint 导入。
+3. 部署完成后先访问 `https://你的域名/api/fixtures`：如果返回 JSON，说明 Node 后端正常；如果返回 HTML/404，说明还是静态部署或启动命令错误。
+4. 再访问 `https://你的域名/style.css` 和 `https://你的域名/app.js`：如果 CSS/JS 不是 `200`，页面就会退化成默认浏览器样式，看起来像“前端变了”。
+5. 首页顶部“数据源”会显示当前数据来源：`free-fifa-api`/`api-sports`/`the-odds-api` 代表接入成功；`demo-fallback` 代表外部 API 未配置、超时或不可用。
+
+Render 环境变量建议至少配置：
+
+```bash
+FREE_FIFA_API_BASE=https://worldcup26.ir
+API_SPORTS_KEY=你的 API-Sports key
+ODDS_API_KEY=你的 The Odds API key
+ODDS_API_SPORT_KEY=soccer_fifa_world_cup
+EXTERNAL_POOL_API_URL=你的外部投注池 JSON API
+PREDICTION_API_URL=你的预测模型 JSON API
+```
+
+## 环境变量
+
+复制 `.env.example` 后按部署环境设置：
+
+```bash
+PORT=4173
+DB_PATH=./data/db.json
+CARD_WEBHOOK_SECRET=replace-with-third-party-webhook-secret
+FREE_FIFA_API_BASE=https://worldcup26.ir # 默认免费 2026 World Cup API：/get/games /get/groups /get/teams
+PROVIDER_TIMEOUT_MS=3500                  # 外部数据源超时后回退演示数据
+API_SPORTS_KEY=                           # 备用：API-Sports 免费/试用 key，更新赛程/球队/排行榜
+ODDS_API_KEY=                           # 可接 The Odds API 免费/试用 key，更新实时赔率
+ODDS_API_SPORT_KEY=soccer_fifa_world_cup
+EXTERNAL_POOL_API_URL=                  # 其他投注网站/聚合器投注池 JSON API
+PREDICTION_API_URL=                     # world-2026-prediction-model 输出 JSON API
+```
+
+## 2026 FIFA 数据源接入
+
+- `📅 赛程比分`、`🛡️ 球队`、`🏆 排行榜`：后端提供 `/api/fixtures`、`/api/teams`、`/api/standings`，默认先接免费 `worldcup26.ir` 的 `/get/games`、`/get/teams`、`/get/groups`；该源不可用时再回退到 `API_SPORTS_KEY` 或内置演示数据。
+- `📈 实时赔率`：后端提供 `/api/odds`。配置 `ODDS_API_KEY` 与 `ODDS_API_SPORT_KEY=soccer_fifa_world_cup` 后可接 The Odds API；没有 key 时使用演示赔率。
+- `💰 投注池`：本站下注保存在 `/api/bets/pool`，同时可配置 `EXTERNAL_POOL_API_URL` 接入其他投注网站/聚合器 API，前端会展示本站积分与外部积分。
+- `🤖 预测`：后端提供 `/api/predictions`。配置 `PREDICTION_API_URL` 后可接预测模型 JSON；未配置时会使用 `samdy88/FIFA-2026-World` README 中的 Poisson 示例概率作为首轮焦点赛预测，并对其余比赛回退到赔率隐含概率。
+
+搜索支持按球队、比赛、日期、阶段和场馆匹配当前 FIFA 2026 赛程。赛程比分、球队、排行榜页面展示 48 队 / 12 组赛制，并在 fallback 数据中包含已完赛、直播中、即将开始、控球、射门、角球等比赛统计。下注必须先选择比赛，再选择主胜/平局/客胜赔率；后端保存比赛 ID、比赛名称、投注选项、积分、赔率快照、潜在返还与状态。
+
+## 多语言与免费投注弹窗
+
+- 页眉搜索框右侧提供语言切换器，支持中文、英语、西班牙语、法语、葡萄牙语、德语、阿拉伯语、日语、韩语，并会把选择保存到浏览器。
+- 用户打开首页后会自动出现“免费投注”弹窗，突出 500 PTS 新玩家奖励、今日推荐比赛和快速注册入口。
+- 为了避免 CDN 被屏蔽导致页面退化，`style.css` 现在包含 `.d-none` 与基础 modal fallback 样式。
+
+## 发卡平台接入方式
+
+### 1. 发卡平台售出卡密后回调本站
+
+让发卡平台在订单支付成功后调用：
+
+```bash
+curl -X POST http://localhost:4173/api/card-platform/cards \
+  -H 'Content-Type: application/json' \
+  -H 'x-card-platform-secret: replace-with-third-party-webhook-secret' \
+  -d '{
+    "code": "ORDER-ABC-123",
+    "points": 1000,
+    "orderId": "third-party-order-10001",
+    "buyerEmail": "buyer@example.com"
+  }'
+```
+
+服务端会把卡密写入数据库，状态为 `active`。
+
+### 2. 用户在网站兑换卡密
+
+前端会调用：
+
+```http
+POST /api/cards/redeem
+Authorization: Bearer <session-token>
+Content-Type: application/json
+
+{ "code": "ORDER-ABC-123" }
+```
+
+成功后：
+
+- 卡密状态变为 `redeemed`
+- 记录 `redeemedBy` 和 `redeemedAt`
+- 用户积分增加对应 `points`
+
+## 主要 API
+
+| Method | Path | 说明 |
+| --- | --- | --- |
+| `POST` | `/api/auth/register` | 注册用户并发放 500 PTS |
+| `POST` | `/api/auth/login` | 登录并返回 token |
+| `GET` | `/api/auth/me` | 获取当前登录用户 |
+| `POST` | `/api/auth/logout` | 退出登录 |
+| `POST` | `/api/card-platform/cards` | 发卡平台写入新卡密 |
+| `POST` | `/api/cards/redeem` | 用户兑换卡密为积分 |
+| `GET` | `/api/bets/pool` | 获取全站投注池 |
+| `GET` | `/api/bets/me` | 获取我的投注 |
+| `POST` | `/api/bets` | 下单投注并扣除积分 |
+| `DELETE` | `/api/bets/me` | 清空当前用户投注记录 |
+
+## 为什么首页还显示演示数据
+
+GitHub 的 `Resolve conflicts` 不能忽略：只要 PR 页面显示 conflict，GitHub 就不会允许合并。必须解决 `.env.example`、`README.md`、`app.js`、`index.html`、`server.js`、`style.css` 的冲突并提交一次 merge commit。
+
+首页不是实时 FIFA 2026 数据通常有三个原因：
+
+1. 免费源 `FREE_FIFA_API_BASE=https://worldcup26.ir` 当前不可用、超时或返回非预期结构，服务端会自动回退到 `demo-fallback`。
+2. Vercel/部署环境没有配置 `API_SPORTS_KEY`、`ODDS_API_KEY`、`PREDICTION_API_URL`、`EXTERNAL_POOL_API_URL` 等变量。
+3. 只部署了静态前端，没有运行 `node server.js`，导致 `/api/*` 无法访问。
+
+页面顶部会显示“数据源”与“实时数据未启用”提示；如果看到 `demo-fallback`，就说明当前不是实时 API 数据。
+
+## 合并冲突后前端被改乱怎么办
+
+如果 GitHub 合并冲突时 `index.html`、`style.css`、`app.js` 被目标分支覆盖，请优先保留以下 PredictWin 标识和逻辑：
+
+- `index.html` 保留 `<title>PredictWin</title>`、`PredictWin UI v2`、`FIFA 2026 ONLY` 和侧边栏页面。
+- `app.js` 保留 `loadFifa2026Data()`、`/api/fixtures`、`/api/odds`、`/api/bets`、`/api/cards/redeem` 等 API 驱动逻辑。
+- `style.css` 保留 `.app-shell`、`.sidebar`、`.frontend-identity`、`.hero-card`、`.odds-button`、`.pool-card` 等新版布局样式。
+
+合并后运行 `npm run check`，再启动 `npm start` 截图确认首页仍显示 PredictWin 2026 FIFA 专属投注平台。
+
+## 检查
+
+```bash
+npm run check
+```

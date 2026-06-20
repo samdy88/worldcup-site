@@ -32,6 +32,10 @@ const demoMatches = [
   { id: 'wc2026-sco-mar', date: '2026-06-19', time: '17:00', home: '苏格兰', away: '摩洛哥', group: '分组赛阶段。C组。第2轮', venue: 'AT&T Stadium', status: 'soon', score: '- : -', stats: { possession: '-', shots: '-', corners: '-' } },
   { id: 'wc2026-bra-hai', date: '2026-06-19', time: '19:30', home: '巴西', away: '海地', group: '分组赛阶段。C组。第2轮', venue: 'SoFi Stadium', status: 'soon', score: '- : -', stats: { possession: '-', shots: '-', corners: '-' } },
   { id: 'wc2026-tur-par', date: '2026-06-19', time: '22:00', home: '土耳其', away: '巴拉圭', group: '分组赛阶段。D组。第2轮', venue: 'MetLife Stadium', status: 'soon', score: '- : -', stats: { possession: '-', shots: '-', corners: '-' } },
+  { id: 'wc2026-017', date: '2026-06-19', time: '17:00', home: 'France', away: 'Senegal', group: 'Group I', venue: 'Rose Bowl', status: 'live', score: '1 - 1', minute: 64, stats: { possession: '60% - 40%', shots: '12 - 7', corners: '6 - 2' } },
+  { id: 'wc2026-018', date: '2026-06-19', time: '20:00', home: 'Norway', away: 'Suriname', group: 'Group I', venue: 'Allegiant Stadium', status: 'soon', score: '0 - 0', stats: { possession: '-', shots: '-', corners: '-' } },
+  { id: 'wc2026-019', date: '2026-06-20', time: '18:00', home: 'Argentina', away: 'Algeria', group: 'Group J', venue: 'AT&T Stadium', status: 'soon', score: '0 - 0', stats: { possession: '-', shots: '-', corners: '-' } },
+  { id: 'wc2026-020', date: '2026-06-20', time: '21:00', home: 'Austria', away: 'Jordan', group: 'Group J', venue: 'Estadio Akron', status: 'soon', score: '0 - 0', stats: { possession: '-', shots: '-', corners: '-' } },
   { id: 'wc2026-021', date: '2026-06-21', time: '18:00', home: 'Portugal', away: 'New Caledonia', group: 'Group K', venue: 'MetLife Stadium', status: 'soon', score: '0 - 0', stats: { possession: '-', shots: '-', corners: '-' } },
   { id: 'wc2026-022', date: '2026-06-21', time: '21:00', home: 'Colombia', away: 'Uzbekistan', group: 'Group K', venue: 'NRG Stadium', status: 'soon', score: '0 - 0', stats: { possession: '-', shots: '-', corners: '-' } },
   { id: 'wc2026-023', date: '2026-06-22', time: '18:00', home: 'England', away: 'Croatia', group: 'Group L', venue: 'SoFi Stadium', status: 'soon', score: '0 - 0', stats: { possession: '-', shots: '-', corners: '-' } },
@@ -97,6 +101,7 @@ const demoOdds = {
   'wc2026-sco-mar': { HOME: 3.45, DRAW: 3.28, AWAY: 2.08 },
   'wc2026-bra-hai': { HOME: 1.18, DRAW: 6.40, AWAY: 13.0 },
   'wc2026-tur-par': { HOME: 2.20, DRAW: 3.15, AWAY: 3.25 }, 'wc2026-final': { HOME: 2.05, DRAW: 3.25, AWAY: 3.45 }
+  'wc2026-005': { HOME: 2.55, DRAW: 3.25, AWAY: 2.70 }, 'wc2026-final': { HOME: 2.05, DRAW: 3.25, AWAY: 3.45 }
 };
 
 function demoStandings() {
