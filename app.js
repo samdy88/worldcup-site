@@ -25,7 +25,7 @@ let demoMatches = [
   { id: 'wc2026-bra-hai', date: '2026-06-19', time: '19:30', home: '巴西', away: '海地', group: '分组赛阶段。C组。第2轮', venue: 'SoFi Stadium', status: 'soon', score: '- : -', stats: { possession: '-', shots: '-', corners: '-' } },
   { id: 'wc2026-tur-par', date: '2026-06-19', time: '22:00', home: '土耳其', away: '巴拉圭', group: '分组赛阶段。D组。第2轮', venue: 'MetLife Stadium', status: 'soon', score: '- : -', stats: { possession: '-', shots: '-', corners: '-' } },
   { id: 'wc2026-sui-can', date: '2026-06-20', time: '16:00', home: '瑞士', away: '加拿大', group: '分组赛阶段。B组。第2轮', venue: 'BMO Field', status: 'soon', score: '- : -', stats: { possession: '-', shots: '-', corners: '-' } },
-  { id: 'wc2026-final', date: '2026-07-19', time: '19:00', home: '决赛球队 1', away: '决赛球队 2', group: '决赛', venue: 'MetLife Stadium', status: 'future', score: '- : -', stats: { possession: '-', shots: '-', corners: '-' } }
+  { id: 'wc2026-final', date: '2026-07-19', time: '19:00', home: '决赛球队 1', away: '决赛球队 2', group: '决赛', venue: 'MetLife Stadium', status: 'future', score: '- : -', stats: { possession: '-', shots: '-', corners: '-' } },
   { id: 'wc2026-001', date: '2026-06-11', time: '20:00', home: 'Mexico', away: 'South Africa', group: 'Group A', venue: 'Estadio Azteca', status: 'soon', score: '0 - 0' },
   { id: 'wc2026-002', date: '2026-06-12', time: '18:00', home: 'Canada', away: 'Japan', group: 'Group B', venue: 'BMO Field', status: 'soon', score: '0 - 0' },
   { id: 'wc2026-003', date: '2026-06-13', time: '21:00', home: 'United States', away: 'Germany', group: 'Group C', venue: 'MetLife Stadium', status: 'live', score: '1 - 1' },
@@ -53,23 +53,6 @@ let baseOdds = {
   'wc2026-bra-hai': { HOME: 1.18, DRAW: 6.40, AWAY: 13.0 },
   'wc2026-tur-par': { HOME: 2.20, DRAW: 3.15, AWAY: 3.25 },
   'wc2026-sui-can': { HOME: 2.40, DRAW: 3.10, AWAY: 1.62 },
-];
-
-
-let teams = [
-  ['Mexico', 'A', 84, 'S. Giménez'],
-  ['South Africa', 'A', 72, 'P. Tau'],
-  ['Canada', 'B', 79, 'A. Davies'],
-  ['Japan', 'B', 82, 'K. Mitoma'],
-  ['United States', 'C', 81, 'C. Pulisic'],
-  ['Germany', 'C', 88, 'J. Musiala'],
-  ['Brazil', 'D', 91, 'Vinícius Jr.'],
-  ['Morocco', 'D', 83, 'A. Hakimi'],
-  ['Argentina', 'E', 90, 'L. Messi'],
-  ['Spain', 'E', 89, 'Pedri']
-];
-
-let baseOdds = {
   'wc2026-001': { HOME: 1.86, DRAW: 3.35, AWAY: 4.20 },
   'wc2026-002': { HOME: 2.18, DRAW: 3.10, AWAY: 3.05 },
   'wc2026-003': { HOME: 2.45, DRAW: 3.40, AWAY: 2.62 },
@@ -364,38 +347,6 @@ function openAuthModal(tab = 'register') {
   showModalById('authModal');
 }
 
-}
-
-function showModalById(id) {
-  const element = $(id);
-  if (!element) return;
-  if (window.bootstrap?.Modal) {
-    bootstrap.Modal.getOrCreateInstance(element).show();
-    return;
-  }
-  element.classList.add('show');
-  element.style.display = 'block';
-  element.removeAttribute('aria-hidden');
-}
-
-function hideModalById(id) {
-  const element = $(id);
-  if (!element) return;
-  if (window.bootstrap?.Modal) {
-    bootstrap.Modal.getInstance(element)?.hide();
-    return;
-  }
-  element.classList.remove('show');
-  element.style.display = 'none';
-  element.setAttribute('aria-hidden', 'true');
-}
-
-function openAuthModal(tab = 'register') {
-  const tabButton = tab === 'login' ? $('login-tab') : $('register-tab');
-  if (window.bootstrap?.Tab) bootstrap.Tab.getOrCreateInstance(tabButton).show();
-  showModalById('authModal');
-}
-
 function showAuthMessage(message, type = 'success') {
   const messageBox = $('auth-message');
   messageBox.textContent = message;
@@ -445,31 +396,6 @@ async function registerUser(event) {
 async function loginUser(event) {
   event.preventDefault();
   hideAuthMessage();
-
-  try {
-    const payload = await apiRequest('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email: $('login-email').value.trim(), password: $('login-password').value })
-    });
-    currentUser = payload.user;
-    saveToken(payload.token);
-    updateUserChrome();
-    await renderAllDynamic();
-    showAuthMessage(`欢迎回来，${currentUser.name}！`, 'success');
-    setTimeout(() => hideModalById('authModal'), 650);
-  } catch (error) {
-    showAuthMessage(error.message, 'error');
-  }
-}
-
-async function logoutUser() {
-  try { await apiRequest('/api/auth/logout', { method: 'POST' }); } catch {}
-  currentUser = null;
-  clearToken();
-  updateUserChrome();
-  await renderAllDynamic();
-}
-
 
   try {
     const payload = await apiRequest('/api/auth/login', {
@@ -824,8 +750,8 @@ async function placeBet(selection, matchId = selectedMatchId) {
   if (!Number.isFinite(stake) || stake <= 0) return alert('请输入有效投注积分。');
   if (currentUser.points < stake) return alert('积分不足，请先充值。');
 
-  const match = demoMatches.find(item => item.id === matchId);
-  const odds = getCurrentOdds(matchId);
+  const match = demoMatches.find(item => item.id === matchId) || demoMatches[0];
+  const odds = getCurrentOdds(matchId)[selection];
   const betPayload = {
     matchId: match.id,
     matchLabel: `${match.home} vs ${match.away}`,
@@ -836,22 +762,11 @@ async function placeBet(selection, matchId = selectedMatchId) {
     odds,
     potentialReturn: Number((stake * odds).toFixed(2))
   };
-  try {
-    const payload = await apiRequest('/api/bets', { method: 'POST', body: JSON.stringify(betPayload) });
-    currentUser = payload.user;
-    selectedBet = null;
-  };
-  try {
-    const payload = await apiRequest('/api/bets', { method: 'POST', body: JSON.stringify(betPayload) });
-    currentUser = payload.user;
-    selectedBet = null;
-    odds: odds[selection],
-    potentialReturn: Number((stake * odds[selection]).toFixed(2))
-  };
 
   try {
     const payload = await apiRequest('/api/bets', { method: 'POST', body: JSON.stringify(betPayload) });
     currentUser = payload.user;
+    selectedBet = null;
     updateUserChrome();
     await renderAllDynamic();
     alert(`投注成功：${betPayload.matchLabel} · ${betPayload.selectionLabel} @ ${betPayload.odds}`);
@@ -1020,7 +935,6 @@ async function boot() {
 
   const matchSelect = $('match-select');
   if (matchSelect) matchSelect.addEventListener('change', event => {
-  $('match-select').addEventListener('change', event => {
     selectedMatchId = event.target.value;
     renderSelectedMatch();
     renderOdds();
