@@ -743,15 +743,16 @@ function renderPrediction() {
   $('top-pick').textContent = best;
 }
 
-async function placeBet(selection, matchId = selectedMatchId) {
+async function placeBet(selection = selectedBet?.selection, matchId = selectedBet?.matchId || selectedMatchId) {
+  if (!selection) return alert('请先选择一个赔率加入投注单。');
   if (!requireLogin('请先注册/登录，领取模拟积分后即可投注。')) return;
 
-  const stake = Number.parseInt($('stake-input').value, 10);
+  const stake = Number.parseInt($('stake-input')?.value || '0', 10);
   if (!Number.isFinite(stake) || stake <= 0) return alert('请输入有效投注积分。');
   if (currentUser.points < stake) return alert('积分不足，请先充值。');
 
   const match = demoMatches.find(item => item.id === matchId) || demoMatches[0];
-  const odds = getCurrentOdds(matchId)[selection];
+  const odds = selectedBet?.matchId === match.id && selectedBet?.selection === selection ? selectedBet.odds : getCurrentOdds(match.id)[selection];
   const betPayload = {
     matchId: match.id,
     matchLabel: `${match.home} vs ${match.away}`,
