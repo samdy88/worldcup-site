@@ -285,6 +285,43 @@ async function getPredictionsData() {
   return { source: 'demo-model', predictions: buildDemoPredictions() };
 }
 
+
+async function getOutrightsData() {
+  if (process.env.OUTRIGHTS_API_URL) {
+    const payload = await fetchJson(process.env.OUTRIGHTS_API_URL);
+    return { source: 'external', markets: payload.markets || payload.outrights || payload };
+  }
+  return {
+    source: 'demo-market',
+    markets: [
+      { label: '冠军 · Winner 2026', selections: [{ name: 'Brazil', odds: 5.2 }, { name: 'France', odds: 6.1 }, { name: 'Argentina', odds: 6.4 }, { name: 'England', odds: 7.2 }, { name: 'Spain', odds: 8.1 }] },
+      { label: '小组冠军 · Group I', selections: [{ name: 'France', odds: 1.62 }, { name: 'Norway', odds: 3.4 }, { name: 'Senegal', odds: 4.1 }, { name: 'Suriname', odds: 26 }] }
+    ]
+  };
+}
+
+async function getTopScorersData() {
+  if (process.env.TOP_SCORERS_API_URL) {
+    const payload = await fetchJson(process.env.TOP_SCORERS_API_URL);
+    return { source: 'external', players: payload.players || payload.scorers || payload };
+  }
+  return {
+    source: 'demo-stats',
+    players: [
+      { rank: 1, name: 'Kylian Mbappé', team: 'France', goals: 3 },
+      { rank: 2, name: 'Lionel Messi', team: 'Argentina', goals: 3 },
+      { rank: 3, name: 'Harry Kane', team: 'England', goals: 2 },
+      { rank: 4, name: 'Vinícius Jr.', team: 'Brazil', goals: 2 },
+      { rank: 5, name: 'Erling Haaland', team: 'Norway', goals: 2 },
+      { rank: 6, name: 'Cristiano Ronaldo', team: 'Portugal', goals: 2 },
+      { rank: 7, name: 'Jamal Musiala', team: 'Germany', goals: 2 },
+      { rank: 8, name: 'Lautaro Martínez', team: 'Argentina', goals: 1 },
+      { rank: 9, name: 'Pedri', team: 'Spain', goals: 1 },
+      { rank: 10, name: 'Mohamed Salah', team: 'Egypt', goals: 1 }
+    ]
+  };
+}
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -382,6 +419,8 @@ async function handleApi(req, res) {
     if (req.method === 'GET' && url.pathname === '/api/odds') return sendJson(res, 200, await getOddsData());
     if (req.method === 'GET' && url.pathname === '/api/external-pools') return sendJson(res, 200, await getExternalPoolsData(db));
     if (req.method === 'GET' && url.pathname === '/api/predictions') return sendJson(res, 200, await getPredictionsData());
+    if (req.method === 'GET' && url.pathname === '/api/outrights') return sendJson(res, 200, await getOutrightsData());
+    if (req.method === 'GET' && url.pathname === '/api/top-scorers') return sendJson(res, 200, await getTopScorersData());
 
     if (req.method === 'POST' && url.pathname === '/api/auth/register') {
       const body = await parseBody(req);

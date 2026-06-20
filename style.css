@@ -341,6 +341,62 @@ body {
   .odds-grid { grid-template-columns: 1fr; }
 }
 
+}
+
+.odds-button:hover,
+.quick-odd:hover,
+.result-card:hover { transform: translateY(-2px); border-color: var(--gold); }
+.odds-button strong,
+.quick-odd strong { display: block; color: var(--gold); font-size: 24px; }
+
+.text-button { border: 0; background: transparent; color: var(--cyan); font-weight: 800; }
+.btn-gold { border: 0 !important; background: var(--gold) !important; color: #101827 !important; font-weight: 900; }
+
+.teams-grid,
+.prediction-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.team-card strong { font-size: 22px; }
+
+.meter { height: 8px; overflow: hidden; border-radius: 99px; background: #020617; }
+.meter span { display: block; height: 100%; background: linear-gradient(90deg, var(--cyan), var(--gold)); }
+
+.standings-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.standing-row { display: grid; grid-template-columns: 1fr repeat(5, 32px); gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+
+.pool-option { display: grid; grid-template-columns: 60px 1fr 96px; gap: 12px; align-items: center; margin-top: 10px; }
+.progress { height: 8px; background: #020617; }
+
+.bet-row { display: grid; grid-template-columns: 2fr repeat(5, auto); gap: 14px; align-items: center; }
+
+.prob-row { display: grid; grid-template-columns: 62px 1fr 46px; gap: 10px; align-items: center; margin: 10px 0; }
+.empty-state { padding: 20px; border: 1px dashed var(--line); border-radius: 18px; color: var(--muted); }
+
+.auth-tabs .nav-link { color: #cbd5e1; }
+.auth-tabs .nav-link.active { background: var(--gold); color: #111827; font-weight: 900; }
+.auth-message { margin-top: 12px; padding: 10px 12px; border-radius: 12px; }
+.auth-message.error { background: rgba(255, 77, 109, 0.18); color: #fecdd3; }
+.auth-message.success { background: rgba(50, 213, 131, 0.18); color: #bbf7d0; }
+
+@media (max-width: 1100px) {
+  .app-shell { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; }
+  .side-nav { grid-template-columns: repeat(2, 1fr); }
+  .topbar,
+  .hero-grid,
+  .content-grid,
+  .guest-gate { grid-template-columns: 1fr; }
+  .frontend-identity { display: grid; }
+  .identity-pills { justify-content: flex-start; }
+  .topbar { display: grid; }
+  .guest-gate { display: grid; }
+  .hero-card { grid-row: auto; }
+  .match-card,
+  .bet-row { grid-template-columns: 1fr; }
+  .main-panel { padding: 18px; }
+  .pool-option { grid-template-columns: 1fr; }
+  .quick-odds,
+  .odds-grid { grid-template-columns: 1fr; }
+}
+
 .topbar-tools {
   display: grid;
   grid-template-columns: minmax(240px, 1fr) auto;
@@ -398,6 +454,12 @@ body {
 .promo-match small,
 .promo-disclaimer { color: var(--muted); }
 .promo-actions { display: flex; gap: 12px; flex-wrap: wrap; margin: 18px 0 10px; }
+
+.match-status.live { background: rgba(239, 68, 68, 0.18); color: #fecaca; }
+.match-stats { color: var(--muted); font-size: 12px; }
+.team-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; color: var(--muted); font-size: 12px; }
+.team-meta span { padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; }
+.prediction-model { display: block; margin-top: 10px; color: var(--muted); }
 
 .match-status.live { background: rgba(239, 68, 68, 0.18); color: #fecaca; }
 .match-stats { color: var(--muted); font-size: 12px; }
@@ -482,5 +544,66 @@ body {
   border: 0;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.14);
+}
+.btn-close::after { content: '×'; color: #fff; font-size: 22px; line-height: 1; }
+
+/* WC2026 event-center redesign inspired by sportsbook information architecture, with original PredictWin branding. */
+.world-win-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr);
+  gap: 22px;
+  padding: 28px;
+  border: 1px solid rgba(247, 201, 107, 0.34);
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(247, 201, 107, 0.42), transparent 28%),
+    radial-gradient(circle at 88% 8%, rgba(94, 234, 212, 0.25), transparent 24%),
+    linear-gradient(135deg, rgba(10, 23, 43, 0.96), rgba(65, 18, 39, 0.88));
+  box-shadow: 0 28px 100px rgba(0, 0, 0, 0.34);
+}
+.world-win-copy h2 { max-width: 780px; margin: 10px 0 12px; font-size: clamp(38px, 5vw, 72px); font-weight: 1000; line-height: 0.96; letter-spacing: -0.05em; }
+.world-win-copy p { max-width: 720px; color: #dbeafe; font-size: 18px; }
+.promo-kicker { display: inline-flex; padding: 8px 13px; border-radius: 999px; background: var(--gold); color: #111827; font-size: 12px; font-weight: 1000; letter-spacing: 0.12em; }
+.world-win-actions,
+.world-win-trust { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+.world-win-trust span { padding: 8px 11px; border: 1px solid var(--line); border-radius: 999px; background: rgba(2, 6, 23, 0.42); color: #e2e8f0; font-weight: 800; }
+.world-win-ticket,
+.bet-slip-card { position: sticky; top: 22px; align-self: start; padding: 20px; border: 1px solid rgba(247, 201, 107, 0.28); border-radius: 26px; background: rgba(2, 6, 23, 0.62); box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3); }
+.world-win-ticket small,
+.world-win-ticket span { display: block; color: var(--muted); }
+.world-win-ticket strong { display: block; margin: 8px 0; color: #fff; font-size: 28px; line-height: 1.08; }
+.event-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+.event-board { min-width: 0; }
+.event-heading { align-items: flex-start; }
+.date-tabs { display: flex; gap: 8px; padding: 4px; border: 1px solid var(--line); border-radius: 999px; background: rgba(2, 6, 23, 0.48); }
+.date-tabs button { border: 0; border-radius: 999px; padding: 8px 13px; background: transparent; color: #cbd5e1; font-weight: 900; }
+.date-tabs button.active { background: var(--gold); color: #111827; }
+.top-event-list { display: grid; gap: 12px; }
+.top-event-card { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(180deg, rgba(15, 23, 42, 0.86), rgba(2, 6, 23, 0.68)); }
+.event-status-row,
+.event-teams,
+.win-probabilities { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.event-teams strong { flex: 1; font-size: 22px; }
+.event-teams strong:last-child { text-align: right; }
+.event-teams span { padding: 8px 16px; border-radius: 999px; background: #071225; color: var(--gold); font-size: 20px; font-weight: 1000; }
+.event-meta { color: var(--muted); font-size: 13px; }
+.win-probabilities { padding: 10px 12px; border: 1px solid var(--line); border-radius: 16px; background: rgba(15, 23, 42, 0.62); color: #cbd5e1; }
+.win-probabilities b { color: var(--gold); }
+.all-markets { justify-self: end; border: 0; background: transparent; color: var(--cyan); font-weight: 900; }
+.market-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.outrights-list,
+.scorers-list { display: grid; gap: 10px; }
+.outright-market { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 18px; background: rgba(2, 6, 23, 0.42); }
+.market-line,
+.scorer-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: rgba(15, 23, 42, 0.58); color: #fff; }
+.market-line b { color: var(--gold); }
+.scorer-row { grid-template-columns: 44px 1fr auto auto; }
+.scorer-row span { color: var(--gold); font-weight: 1000; }
+.scorer-row small { color: var(--muted); }
+.scorer-row b { color: var(--cyan); }
+.slip-return { display: flex; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 16px; background: rgba(15, 23, 42, 0.72); }
+.slip-return strong { color: var(--gold); }
+@media (max-width: 1180px) { .world-win-hero, .event-layout, .market-grid { grid-template-columns: 1fr; } .world-win-ticket, .bet-slip-card { position: static; } }
+@media (max-width: 680px) { .event-status-row, .event-teams, .win-probabilities { align-items: stretch; flex-direction: column; } .event-teams strong:last-child { text-align: left; } .scorer-row { grid-template-columns: 40px 1fr; } }
 }
 .btn-close::after { content: '×'; color: #fff; font-size: 22px; line-height: 1; }

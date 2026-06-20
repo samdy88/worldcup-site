@@ -41,6 +41,20 @@ let teams = [
   ['Spain', 'E', 89, 'Pedri']
 ];
 
+
+let teams = [
+  ['Mexico', 'A', 84, 'S. Giménez'],
+  ['South Africa', 'A', 72, 'P. Tau'],
+  ['Canada', 'B', 79, 'A. Davies'],
+  ['Japan', 'B', 82, 'K. Mitoma'],
+  ['United States', 'C', 81, 'C. Pulisic'],
+  ['Germany', 'C', 88, 'J. Musiala'],
+  ['Brazil', 'D', 91, 'Vinícius Jr.'],
+  ['Morocco', 'D', 83, 'A. Hakimi'],
+  ['Argentina', 'E', 90, 'L. Messi'],
+  ['Spain', 'E', 89, 'Pedri']
+];
+
 let baseOdds = {
   'wc2026-001': { HOME: 1.86, DRAW: 3.35, AWAY: 4.20 },
   'wc2026-002': { HOME: 2.18, DRAW: 3.10, AWAY: 3.05 },
@@ -409,6 +423,31 @@ async function logoutUser() {
   await renderAllDynamic();
 }
 
+
+  try {
+    const payload = await apiRequest('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email: $('login-email').value.trim(), password: $('login-password').value })
+    });
+    currentUser = payload.user;
+    saveToken(payload.token);
+    updateUserChrome();
+    await renderAllDynamic();
+    showAuthMessage(`欢迎回来，${currentUser.name}！`, 'success');
+    setTimeout(() => hideModalById('authModal'), 650);
+  } catch (error) {
+    showAuthMessage(error.message, 'error');
+  }
+}
+
+async function logoutUser() {
+  try { await apiRequest('/api/auth/logout', { method: 'POST' }); } catch {}
+  currentUser = null;
+  clearToken();
+  updateUserChrome();
+  await renderAllDynamic();
+}
+
 async function restoreSession() {
   try {
     const payload = await apiRequest('/api/auth/me');
@@ -446,6 +485,16 @@ function prediction(match) {
 }
 
 function renderMatchSelect() {
+  const select = $('match-select');
+  if (!select) return;
+  select.innerHTML = demoMatches.map(match => `<option value="${match.id}">${match.date} ${match.home} vs ${match.away}</option>`).join('');
+  select.value = selectedMatchId;
+}
+
+function renderSelectedMatch() {
+  const match = demoMatches.find(item => item.id === selectedMatchId) || demoMatches[0];
+  const selectedCard = $('selected-match-card');
+  if (selectedCard) selectedCard.innerHTML = `<div class="team-name">${match.home} vs ${match.away}</div><div class="small text-secondary">${match.group} · ${match.date} ${match.time} · ${match.venue}</div>`;
   $('match-select').innerHTML = demoMatches.map(match => `<option value="${match.id}">${match.date} ${match.home} vs ${match.away}</option>`).join('');
   $('match-select').value = selectedMatchId;
 }
@@ -469,6 +518,176 @@ function oddsButtons(matchId, className = 'odds-button') {
 }
 
 function renderOdds() {
+  const oddsPanel = $('odds-panel');
+  if (oddsPanel) oddsPanel.innerHTML = oddsButtons(selectedMatchId);
+  const heroOdds = $('hero-odds');
+  if (heroOdds) heroOdds.innerHTML = oddsButtons(selectedMatchId, 'quick-odd');
+  renderBetSlip();
+}
+
+function statusLabel(match) {
+  const status = String(match.status || '').toUpperCase();
+  if (status === 'LIVE' || status === 'IN_PLAY') return `LIVE ${match.minute ? match.minute + '′' : ''}`;
+  if (['FT', 'AET', 'PEN'].includes(status)) return 'FT';
+  return 'UPCOMING';
+}
+
+function matchDateRank(match) {
+  const today = '2026-06-19';
+  if (activeDateFilter === 'today') return match.date === today || String(match.status).toLowerCase() === 'live';
+  if (activeDateFilter === 'tomorrow') return match.date === '2026-06-20';
+  return true;
+}
+
+function renderTopEventCard(match) {
+  const probabilities = prediction(match);
+  const odds = getCurrentOdds(match.id);
+  return `
+    <article class="top-event-card">
+      <div class="event-status-row"><span class="match-status ${String(match.status).toLowerCase() === 'live' ? 'live' : ''}">${statusLabel(match)}</span><small>${match.group} · ${match.date} ${match.time}</small></div>
+      <div class="event-teams"><strong>${match.home}</strong><span>${match.score}</span><strong>${match.away}</strong></div>
+      <div class="event-meta">${match.venue} · 控球 ${match.stats?.possession || '-'} · 射门 ${match.stats?.shots || '-'}</div>
+      <div class="win-probabilities">${['HOME', 'DRAW', 'AWAY'].map(selection => `<span>${moneylineLabel(selection)} <b>${probabilities[selection]}%</b></span>`).join('')}</div>
+      <div class="quick-odds">${['HOME', 'DRAW', 'AWAY'].map(selection => `<button class="quick-odd" data-selection="${selection}" data-match-id="${match.id}"><span>${moneylineLabel(selection)}</span><strong>${odds[selection].toFixed(2)}</strong></button>`).join('')}</div>
+      <button class="all-markets" data-match-id="${match.id}">所有盘口 +${Math.floor(420 + Number(match.id.replace(/\D/g, '').slice(-2) || 1) * 17)}</button>
+    </article>`;
+}
+
+function renderMatches() {
+  const eventMatches = demoMatches.filter(matchDateRank);
+  const html = (eventMatches.length ? eventMatches : demoMatches).map(renderTopEventCard).join('');
+  $('featured-matches').innerHTML = html;
+  $('schedule-list').innerHTML = demoMatches.map(match => `
+    <article class="match-card">
+      <div><div class="team-name">${match.home}</div><small>${match.venue}</small><div class="match-stats">控球 ${match.stats?.possession || '-'} · 射门 ${match.stats?.shots || '-'}</div></div>
+      <div class="score-pill">${match.score}</div>
+      <div><div class="team-name">${match.away}</div><small>${match.group} · ${match.date} ${match.time}</small><div class="match-status ${String(match.status).toLowerCase() === 'live' ? 'live' : ''}">${statusLabel(match)}</div></div>
+      <button class="btn btn-sm btn-outline-warning pick-match" data-match-id="${match.id}">${String(match.status).toLowerCase() === 'live' ? '进入直播' : '投注'}</button>
+    </article>
+  `).join('');
+  const todayCount = $('today-count');
+  if (todayCount) todayCount.textContent = demoMatches.filter(match => match.date === '2026-06-19' || String(match.status).toLowerCase() === 'live').length;
+}
+
+function renderOutrights() {
+  const markets = outrights.length ? outrights : [
+    { label: '冠军', selections: [{ name: 'Brazil', odds: 5.2 }, { name: 'France', odds: 6.1 }, { name: 'Argentina', odds: 6.4 }, { name: 'England', odds: 7.2 }] },
+    { label: '小组冠军 · Group I', selections: [{ name: 'France', odds: 1.62 }, { name: 'Norway', odds: 3.4 }, { name: 'Senegal', odds: 4.1 }, { name: 'Suriname', odds: 26 }] }
+  ];
+  const board = $('outrights-board');
+  if (!board) return;
+  board.innerHTML = markets.map(market => `<article class="outright-market"><strong>${market.label}</strong>${market.selections.map(item => `<button class="market-line" type="button"><span>${item.name}</span><b>${Number(item.odds).toFixed(2)}</b></button>`).join('')}</article>`).join('');
+}
+
+function renderTopScorers() {
+  const players = topScorers.length ? topScorers : [
+    { rank: 1, name: 'Kylian Mbappé', team: 'France', goals: 3 },
+    { rank: 2, name: 'Lionel Messi', team: 'Argentina', goals: 3 },
+    { rank: 3, name: 'Harry Kane', team: 'England', goals: 2 },
+    { rank: 4, name: 'Vinícius Jr.', team: 'Brazil', goals: 2 },
+    { rank: 5, name: 'Erling Haaland', team: 'Norway', goals: 2 }
+  ];
+  const board = $('top-scorers-board');
+  if (!board) return;
+  board.innerHTML = players.slice(0, 10).map(player => `<div class="scorer-row"><span>#${player.rank}</span><strong>${player.name}</strong><small>${player.team}</small><b>${player.goals} 球</b></div>`).join('');
+}
+
+
+function renderTeams() {
+  $('teams-grid').innerHTML = teams.map(team => `
+    <article class="team-card">
+      <small>Group ${team[1]}</small>
+      <strong>${team[0]}</strong>
+      <p class="mb-2 text-secondary">核心球员：${team[3]}</p>
+      <div class="meter"><span style="width:${team[2]}%"></span></div>
+      <div class="team-meta"><span>Group ${team[1]}</span><span>Power ${team[2]}</span><span>FIFA 2026</span></div>
+    </article>
+  `).join('');
+}
+
+function renderStandings() {
+  const groups = standingsGroups.length ? standingsGroups : ['A', 'B', 'C', 'D', 'E'].map(group => ({
+    group: `Group ${group}`,
+    rows: teams.filter(team => team[1] === group).map((team, index) => ({ team: team[0], played: index + 1, win: index ? 0 : 1, draw: index ? 1 : 0, loss: 0, points: index ? 1 : 3 }))
+  }));
+
+  $('standings-content').innerHTML = groups.map(group => `
+    <article class="standing-card">
+      <strong>${group.group}</strong>
+      <div class="standing-row text-secondary"><span>Team</span><b>场</b><b>胜</b><b>平</b><b>净</b><b>分</b></div>
+      ${group.rows.map(row => `
+        <div class="standing-row"><span>${row.team}</span><b>${row.played}</b><b>${row.win}</b><b>${row.draw}</b><b>${row.gd ?? 0}</b><b>${row.points}</b></div>
+      `).join('')}
+    </article>
+  `).join('');
+}
+
+function renderPrediction() {
+  let best = '--';
+  let bestPct = 0;
+
+  $('prediction-board').innerHTML = demoMatches.map(match => {
+    const probabilities = prediction(match);
+    const top = Object.entries(probabilities).sort((a, b) => b[1] - a[1])[0];
+    if (top[1] > bestPct) {
+      bestPct = top[1];
+      best = `${match.home} ${moneylineLabel(top[0])} ${top[1]}%`;
+    }
+
+    return `
+      <article class="prediction-card">
+        <strong>${match.home} vs ${match.away}</strong>
+        ${['HOME', 'DRAW', 'AWAY'].map(selection => `
+          <div class="prob-row"><span>${moneylineLabel(selection)}</span><div class="meter"><span style="width:${probabilities[selection]}%"></span></div><b>${probabilities[selection]}%</b></div>
+        `).join('')}
+        <small class="text-warning">推荐：${moneylineLabel(top[0])}</small><small class="prediction-model">模型：${predictionOverrides.find(item => item.matchId === match.id)?.model || 'FIFA-2026-World / Odds implied'}</small>
+      </article>
+    `;
+  }).join('');
+
+  const topPick = $('top-pick');
+  if (topPick) topPick.textContent = best;
+}
+
+function selectBet(selection, matchId = selectedMatchId) {
+  const match = demoMatches.find(item => item.id === matchId) || demoMatches[0];
+  const odds = getCurrentOdds(match.id);
+  selectedMatchId = match.id;
+  selectedBet = {
+    matchId: match.id,
+    matchLabel: `${match.home} vs ${match.away}`,
+    matchDate: match.date,
+    selection,
+    selectionLabel: moneylineLabel(selection),
+    odds: odds[selection]
+  };
+  renderBetSlip();
+}
+
+function renderBetSlip() {
+  const slip = $('bet-slip');
+  const empty = $('bet-slip-empty');
+  if (!slip || !empty) return;
+  if (!selectedBet) {
+    slip.classList.add('d-none');
+    empty.classList.remove('d-none');
+    return;
+  }
+  const stake = Number.parseInt($('stake-input')?.value || '10', 10) || 10;
+  empty.classList.add('d-none');
+  slip.classList.remove('d-none');
+  $('bet-slip-match').innerHTML = `<div class="team-name">${selectedBet.matchLabel}</div><div class="small text-secondary">${selectedBet.matchDate} · ${selectedBet.selectionLabel} @ ${Number(selectedBet.odds).toFixed(2)}</div>`;
+  $('bet-slip-return').textContent = `${(stake * selectedBet.odds).toFixed(2)} PTS`;
+}
+
+async function placeBet(selection = selectedBet?.selection, matchId = selectedBet?.matchId || selectedMatchId) {
+  if (!selection) return alert('请先选择一个赔率加入投注单。');
+  if (!requireLogin('请先注册/登录，领取模拟积分后即可投注。')) return;
+  const stake = Number.parseInt($('stake-input')?.value || '0', 10);
+  if (!Number.isFinite(stake) || stake <= 0) return alert('请输入有效投注积分。');
+  if (currentUser.points < stake) return alert('积分不足，请先充值。');
+  const match = demoMatches.find(item => item.id === matchId) || demoMatches[0];
+  const odds = selectedBet?.matchId === match.id && selectedBet?.selection === selection ? selectedBet.odds : getCurrentOdds(match.id)[selection];
   $('odds-panel').innerHTML = oddsButtons(selectedMatchId);
   $('hero-odds').innerHTML = oddsButtons(selectedMatchId, 'quick-odd');
 }
@@ -567,6 +786,13 @@ async function placeBet(selection, matchId = selectedMatchId) {
     selection,
     selectionLabel: moneylineLabel(selection),
     stake,
+    odds,
+    potentialReturn: Number((stake * odds).toFixed(2))
+  };
+  try {
+    const payload = await apiRequest('/api/bets', { method: 'POST', body: JSON.stringify(betPayload) });
+    currentUser = payload.user;
+    selectedBet = null;
     odds: odds[selection],
     potentialReturn: Number((stake * odds[selection]).toFixed(2))
   };
@@ -581,6 +807,7 @@ async function placeBet(selection, matchId = selectedMatchId) {
     alert(error.message);
   }
 }
+
 
 async function renderMyBets() {
   const container = $('my-bets-list');
@@ -609,6 +836,8 @@ async function renderMyBets() {
 async function renderBettingPool() {
   const { bets } = await apiRequest('/api/bets/pool');
   const externalTotal = externalPools.reduce((sum, bet) => sum + Number(bet.stake || bet.amount || 0), 0);
+  const totalPoolPoints = $('total-pool-points');
+  if (totalPoolPoints) totalPoolPoints.textContent = `${bets.reduce((sum, bet) => sum + bet.stake, 0)} PTS 本站 / ${externalTotal} PTS 外部`;
   $('total-pool-points').textContent = `${bets.reduce((sum, bet) => sum + bet.stake, 0)} PTS 本站 / ${externalTotal} PTS 外部`;
   $('betting-pool').innerHTML = demoMatches.map(match => {
     const matchBets = bets.filter(bet => bet.matchId === match.id);
@@ -691,6 +920,8 @@ async function renderAllDynamic() {
   renderTeams();
   renderStandings();
   renderPrediction();
+  renderOutrights();
+  renderTopScorers();
   await renderMyBets();
   await renderBettingPool();
   renderLiveOdds();
@@ -709,6 +940,8 @@ function handleBodyClick(event) {
   const pick = event.target.closest('[data-match-id]');
   if (pick) {
     selectedMatchId = pick.dataset.matchId;
+    const matchSelect = $('match-select');
+    if (matchSelect) matchSelect.value = selectedMatchId;
     $('match-select').value = selectedMatchId;
     renderSelectedMatch();
     renderOdds();
@@ -716,6 +949,14 @@ function handleBodyClick(event) {
   }
 
   const odd = event.target.closest('[data-selection]');
+  if (odd) selectBet(odd.dataset.selection, odd.dataset.matchId || selectedMatchId);
+
+  const dateFilter = event.target.closest('[data-date-filter]');
+  if (dateFilter) {
+    activeDateFilter = dateFilter.dataset.dateFilter;
+    document.querySelectorAll('[data-date-filter]').forEach(button => button.classList.toggle('active', button === dateFilter));
+    renderMatches();
+  }
   if (odd) placeBet(odd.dataset.selection, odd.dataset.matchId || selectedMatchId);
 }
 
@@ -725,11 +966,17 @@ async function boot() {
   renderMatchSelect();
   await renderAllDynamic();
 
+  const matchSelect = $('match-select');
+  if (matchSelect) matchSelect.addEventListener('change', event => {
   $('match-select').addEventListener('change', event => {
     selectedMatchId = event.target.value;
     renderSelectedMatch();
     renderOdds();
   });
+  const stakeInput = $('stake-input');
+  if (stakeInput) stakeInput.addEventListener('input', renderBetSlip);
+  const confirmBet = $('confirm-bet');
+  if (confirmBet) confirmBet.addEventListener('click', () => placeBet());
   $('language-select').value = currentLanguage;
   applyLanguage(currentLanguage);
   $('language-select').addEventListener('change', event => { applyLanguage(event.target.value); renderAllDynamic(); });
