@@ -41,6 +41,20 @@ let teams = [
   ['Spain', 'E', 89, 'Pedri']
 ];
 
+
+let teams = [
+  ['Mexico', 'A', 84, 'S. Giménez'],
+  ['South Africa', 'A', 72, 'P. Tau'],
+  ['Canada', 'B', 79, 'A. Davies'],
+  ['Japan', 'B', 82, 'K. Mitoma'],
+  ['United States', 'C', 81, 'C. Pulisic'],
+  ['Germany', 'C', 88, 'J. Musiala'],
+  ['Brazil', 'D', 91, 'Vinícius Jr.'],
+  ['Morocco', 'D', 83, 'A. Hakimi'],
+  ['Argentina', 'E', 90, 'L. Messi'],
+  ['Spain', 'E', 89, 'Pedri']
+];
+
 let baseOdds = {
   'wc2026-001': { HOME: 1.86, DRAW: 3.35, AWAY: 4.20 },
   'wc2026-002': { HOME: 2.18, DRAW: 3.10, AWAY: 3.05 },
@@ -104,6 +118,119 @@ async function loadFifa2026Data() {
     predictionOverrides = predictionData.predictions || [];
     outrights = outrightData.markets || [];
     topScorers = scorerData.players || [];
+    dataSources = { fixtures: fixtures.source, teams: teamData.source, standings: standingsData.source, odds: oddsData.source, pools: poolData.source, predictions: predictionData.source };
+    updateDataSourceStatus();
+    updateLiveDataBanner();
+    selectedMatchId = demoMatches[0]?.id || selectedMatchId;
+  } catch (error) {
+    console.warn('FIFA 2026 data API unavailable, using demo fallback.', error);
+    dataSources = { fixtures: 'demo-fallback', teams: 'demo-fallback', standings: 'demo-fallback', odds: 'demo-fallback', pools: 'local', predictions: 'demo-model' };
+    updateDataSourceStatus();
+    updateLiveDataBanner();
+  }
+}
+
+function updateDataSourceStatus() {
+  const target = $('data-source-status');
+  if (!target) return;
+  target.textContent = `数据源：赛程 ${dataSources.fixtures || '-'} · 赔率 ${dataSources.odds || '-'} · 预测 ${dataSources.predictions || '-'} · 投注池 ${dataSources.pools || '-'}`;
+}
+
+
+function updateLiveDataBanner() {
+  const banner = $('live-data-banner');
+  const message = $('live-data-message');
+  if (!banner || !message) return;
+
+  const fallbackSources = Object.entries(dataSources).filter(([, source]) => String(source || '').includes('demo'));
+  const liveSources = Object.values(dataSources).filter(source => source && !String(source).includes('demo'));
+
+  if (!fallbackSources.length) {
+    banner.classList.add('d-none');
+    return;
+  }
+
+  banner.classList.remove('d-none');
+  message.textContent = `当前 ${fallbackSources.map(([key, source]) => `${key}=${source}`).join('，')}。请在部署环境配置 FREE_FIFA_API_BASE/API_SPORTS_KEY/ODDS_API_KEY/PREDICTION_API_URL/EXTERNAL_POOL_API_URL；已启用的数据源：${liveSources.join('，') || '无'}。`;
+}
+
+
+function t(key) {
+  return (translations[currentLanguage] || translations.zh)[key] || translations.zh[key] || key;
+}
+
+function applyLanguage(language = currentLanguage) {
+  currentLanguage = translations[language] ? language : 'zh';
+  localStorage.setItem(LANGUAGE_KEY, currentLanguage);
+  document.documentElement.lang = currentLanguage === 'zh' ? 'zh-CN' : currentLanguage;
+  document.documentElement.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
+  const navTexts = t('nav');
+  document.querySelectorAll('.side-nav a').forEach((link, index) => { link.textContent = navTexts[index] || link.textContent; });
+  $('site-search').placeholder = t('search');
+  $('auth-button').textContent = t('auth');
+  $('logout-button').textContent = t('logout');
+  document.querySelector('.topbar h1').textContent = t('title');
+  $('guest-gate').querySelector('h2').textContent = t('guestTitle');
+  $('guest-gate').querySelector('button').textContent = t('guestCta');
+  document.querySelector('[data-page="schedule"] .section-heading span').textContent = t('schedule');
+  document.querySelector('[data-page="teams"] .section-heading span').textContent = t('teams');
+  document.querySelector('[data-page="standings"] .section-heading span').textContent = t('standings');
+  document.querySelector('[data-page="odds"] .section-heading span').textContent = t('odds');
+  document.querySelector('[data-page="predictions"] .section-heading span').textContent = t('predictions');
+  document.querySelector('[data-page="pool"] .section-heading span').textContent = t('pool');
+  document.querySelector('[data-page="my-bets"] .section-heading span').textContent = t('myBets');
+  $('promoModalLabel').textContent = t('promoTitle');
+  document.querySelector('.promo-body p').textContent = t('promoText');
+  document.querySelector('.promo-actions [data-auth-tab]').textContent = t('promoCta');
+  document.querySelector('.promo-actions [data-route]').textContent = t('promoOdds');
+}
+
+function showPromoModal() {
+  const match = demoMatches.find(item => item.status === 'live') || demoMatches.find(item => item.date >= '2026-06-19') || demoMatches[0];
+  if (match) {
+    $('promo-match-title').textContent = `${match.home} vs ${match.away}`;
+    $('promo-match-meta').textContent = `${match.group} · ${match.date} ${match.time} · ${match.venue}`;
+  }
+  setTimeout(() => showModalById('promoModal'), 550);
+}
+
+
+async function apiRequest(path, options = {}) {
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  const token = localStorage.getItem(STORAGE_KEYS.token);
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || '服务器请求失败。');
+  return payload;
+}
+
+function saveToken(token) {
+  localStorage.setItem(STORAGE_KEYS.token, token);
+}
+
+function clearToken() {
+  localStorage.removeItem(STORAGE_KEYS.token);
+}
+
+
+async function loadFifa2026Data() {
+  try {
+    const [fixtures, teamData, standingsData, oddsData, poolData, predictionData] = await Promise.all([
+      apiRequest('/api/fixtures'),
+      apiRequest('/api/teams'),
+      apiRequest('/api/standings'),
+      apiRequest('/api/odds'),
+      apiRequest('/api/external-pools'),
+      apiRequest('/api/predictions')
+    ]);
+    if (fixtures.matches?.length) demoMatches = fixtures.matches;
+    if (teamData.teams?.length) teams = teamData.teams;
+    if (standingsData.standings?.length) standingsGroups = standingsData.standings;
+    if (oddsData.oddsByMatchId) baseOdds = oddsData.oddsByMatchId;
+    externalPools = poolData.pools || [];
+    predictionOverrides = predictionData.predictions || [];
     dataSources = { fixtures: fixtures.source, teams: teamData.source, standings: standingsData.source, odds: oddsData.source, pools: poolData.source, predictions: predictionData.source };
     updateDataSourceStatus();
     updateLiveDataBanner();
@@ -296,6 +423,31 @@ async function logoutUser() {
   await renderAllDynamic();
 }
 
+
+  try {
+    const payload = await apiRequest('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email: $('login-email').value.trim(), password: $('login-password').value })
+    });
+    currentUser = payload.user;
+    saveToken(payload.token);
+    updateUserChrome();
+    await renderAllDynamic();
+    showAuthMessage(`欢迎回来，${currentUser.name}！`, 'success');
+    setTimeout(() => hideModalById('authModal'), 650);
+  } catch (error) {
+    showAuthMessage(error.message, 'error');
+  }
+}
+
+async function logoutUser() {
+  try { await apiRequest('/api/auth/logout', { method: 'POST' }); } catch {}
+  currentUser = null;
+  clearToken();
+  updateUserChrome();
+  await renderAllDynamic();
+}
+
 async function restoreSession() {
   try {
     const payload = await apiRequest('/api/auth/me');
@@ -343,6 +495,13 @@ function renderSelectedMatch() {
   const match = demoMatches.find(item => item.id === selectedMatchId) || demoMatches[0];
   const selectedCard = $('selected-match-card');
   if (selectedCard) selectedCard.innerHTML = `<div class="team-name">${match.home} vs ${match.away}</div><div class="small text-secondary">${match.group} · ${match.date} ${match.time} · ${match.venue}</div>`;
+  $('match-select').innerHTML = demoMatches.map(match => `<option value="${match.id}">${match.date} ${match.home} vs ${match.away}</option>`).join('');
+  $('match-select').value = selectedMatchId;
+}
+
+function renderSelectedMatch() {
+  const match = demoMatches.find(item => item.id === selectedMatchId);
+  $('selected-match-card').innerHTML = `<div class="team-name">${match.home} vs ${match.away}</div><div class="small text-secondary">${match.group} · ${match.date} ${match.time} · ${match.venue}</div>`;
   $('hero-match-title').textContent = `${match.home} vs ${match.away}`;
   $('hero-match-meta').textContent = `${match.group} · ${match.date} ${match.time} · ${match.venue}`;
   [$('hero-home-score').textContent, $('hero-away-score').textContent] = match.score.split(' - ');
@@ -529,6 +688,97 @@ async function placeBet(selection = selectedBet?.selection, matchId = selectedBe
   if (currentUser.points < stake) return alert('积分不足，请先充值。');
   const match = demoMatches.find(item => item.id === matchId) || demoMatches[0];
   const odds = selectedBet?.matchId === match.id && selectedBet?.selection === selection ? selectedBet.odds : getCurrentOdds(match.id)[selection];
+  $('odds-panel').innerHTML = oddsButtons(selectedMatchId);
+  $('hero-odds').innerHTML = oddsButtons(selectedMatchId, 'quick-odd');
+}
+
+function statusLabel(match) {
+  const status = String(match.status || '').toUpperCase();
+  if (status === 'LIVE' || status === 'IN_PLAY') return `LIVE ${match.minute ? match.minute + '′' : ''}`;
+  if (['FT', 'AET', 'PEN'].includes(status)) return 'FT';
+  return 'UPCOMING';
+}
+
+function renderMatches() {
+  const html = demoMatches.map(match => `
+    <article class="match-card">
+      <div><div class="team-name">${match.home}</div><small>${match.venue}</small><div class="match-stats">控球 ${match.stats?.possession || '-'} · 射门 ${match.stats?.shots || '-'}</div></div>
+      <div class="score-pill">${match.score}</div>
+      <div><div class="team-name">${match.away}</div><small>${match.group} · ${match.date} ${match.time}</small><div class="match-status ${String(match.status).toLowerCase() === 'live' ? 'live' : ''}">${statusLabel(match)}</div></div>
+      <button class="btn btn-sm btn-outline-warning pick-match" data-match-id="${match.id}">${String(match.status).toLowerCase() === 'live' ? '进入直播' : '投注'}</button>
+    </article>
+  `).join('');
+
+  $('featured-matches').innerHTML = html;
+  $('schedule-list').innerHTML = html;
+  const today = new Date().toISOString().slice(0, 10);
+  $('today-count').textContent = demoMatches.filter(match => match.date === today || String(match.status).toLowerCase() === 'live').length;
+}
+
+function renderTeams() {
+  $('teams-grid').innerHTML = teams.map(team => `
+    <article class="team-card">
+      <small>Group ${team[1]}</small>
+      <strong>${team[0]}</strong>
+      <p class="mb-2 text-secondary">核心球员：${team[3]}</p>
+      <div class="meter"><span style="width:${team[2]}%"></span></div>
+      <div class="team-meta"><span>Group ${team[1]}</span><span>Power ${team[2]}</span><span>FIFA 2026</span></div>
+    </article>
+  `).join('');
+}
+
+function renderStandings() {
+  const groups = standingsGroups.length ? standingsGroups : ['A', 'B', 'C', 'D', 'E'].map(group => ({
+    group: `Group ${group}`,
+    rows: teams.filter(team => team[1] === group).map((team, index) => ({ team: team[0], played: index + 1, win: index ? 0 : 1, draw: index ? 1 : 0, loss: 0, points: index ? 1 : 3 }))
+  }));
+
+  $('standings-content').innerHTML = groups.map(group => `
+    <article class="standing-card">
+      <strong>${group.group}</strong>
+      <div class="standing-row text-secondary"><span>Team</span><b>场</b><b>胜</b><b>平</b><b>净</b><b>分</b></div>
+      ${group.rows.map(row => `
+        <div class="standing-row"><span>${row.team}</span><b>${row.played}</b><b>${row.win}</b><b>${row.draw}</b><b>${row.gd ?? 0}</b><b>${row.points}</b></div>
+      `).join('')}
+    </article>
+  `).join('');
+}
+
+function renderPrediction() {
+  let best = '--';
+  let bestPct = 0;
+
+  $('prediction-board').innerHTML = demoMatches.map(match => {
+    const probabilities = prediction(match);
+    const top = Object.entries(probabilities).sort((a, b) => b[1] - a[1])[0];
+    if (top[1] > bestPct) {
+      bestPct = top[1];
+      best = `${match.home} ${moneylineLabel(top[0])} ${top[1]}%`;
+    }
+
+    return `
+      <article class="prediction-card">
+        <strong>${match.home} vs ${match.away}</strong>
+        ${['HOME', 'DRAW', 'AWAY'].map(selection => `
+          <div class="prob-row"><span>${moneylineLabel(selection)}</span><div class="meter"><span style="width:${probabilities[selection]}%"></span></div><b>${probabilities[selection]}%</b></div>
+        `).join('')}
+        <small class="text-warning">推荐：${moneylineLabel(top[0])}</small><small class="prediction-model">模型：${predictionOverrides.find(item => item.matchId === match.id)?.model || 'FIFA-2026-World / Odds implied'}</small>
+      </article>
+    `;
+  }).join('');
+
+  $('top-pick').textContent = best;
+}
+
+async function placeBet(selection, matchId = selectedMatchId) {
+  if (!requireLogin('请先注册/登录，领取模拟积分后即可投注。')) return;
+
+  const stake = Number.parseInt($('stake-input').value, 10);
+  if (!Number.isFinite(stake) || stake <= 0) return alert('请输入有效投注积分。');
+  if (currentUser.points < stake) return alert('积分不足，请先充值。');
+
+  const match = demoMatches.find(item => item.id === matchId);
+  const odds = getCurrentOdds(matchId);
   const betPayload = {
     matchId: match.id,
     matchLabel: `${match.home} vs ${match.away}`,
@@ -543,6 +793,13 @@ async function placeBet(selection = selectedBet?.selection, matchId = selectedBe
     const payload = await apiRequest('/api/bets', { method: 'POST', body: JSON.stringify(betPayload) });
     currentUser = payload.user;
     selectedBet = null;
+    odds: odds[selection],
+    potentialReturn: Number((stake * odds[selection]).toFixed(2))
+  };
+
+  try {
+    const payload = await apiRequest('/api/bets', { method: 'POST', body: JSON.stringify(betPayload) });
+    currentUser = payload.user;
     updateUserChrome();
     await renderAllDynamic();
     alert(`投注成功：${betPayload.matchLabel} · ${betPayload.selectionLabel} @ ${betPayload.odds}`);
@@ -581,6 +838,7 @@ async function renderBettingPool() {
   const externalTotal = externalPools.reduce((sum, bet) => sum + Number(bet.stake || bet.amount || 0), 0);
   const totalPoolPoints = $('total-pool-points');
   if (totalPoolPoints) totalPoolPoints.textContent = `${bets.reduce((sum, bet) => sum + bet.stake, 0)} PTS 本站 / ${externalTotal} PTS 外部`;
+  $('total-pool-points').textContent = `${bets.reduce((sum, bet) => sum + bet.stake, 0)} PTS 本站 / ${externalTotal} PTS 外部`;
   $('betting-pool').innerHTML = demoMatches.map(match => {
     const matchBets = bets.filter(bet => bet.matchId === match.id);
     const total = matchBets.reduce((sum, bet) => sum + bet.stake, 0);
@@ -684,6 +942,7 @@ function handleBodyClick(event) {
     selectedMatchId = pick.dataset.matchId;
     const matchSelect = $('match-select');
     if (matchSelect) matchSelect.value = selectedMatchId;
+    $('match-select').value = selectedMatchId;
     renderSelectedMatch();
     renderOdds();
     if (pick.classList.contains('pick-match') || pick.classList.contains('result-card')) showRoute('home');
@@ -698,6 +957,7 @@ function handleBodyClick(event) {
     document.querySelectorAll('[data-date-filter]').forEach(button => button.classList.toggle('active', button === dateFilter));
     renderMatches();
   }
+  if (odd) placeBet(odd.dataset.selection, odd.dataset.matchId || selectedMatchId);
 }
 
 async function boot() {
@@ -708,6 +968,7 @@ async function boot() {
 
   const matchSelect = $('match-select');
   if (matchSelect) matchSelect.addEventListener('change', event => {
+  $('match-select').addEventListener('change', event => {
     selectedMatchId = event.target.value;
     renderSelectedMatch();
     renderOdds();
