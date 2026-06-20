@@ -1,0 +1,31 @@
+{
+  "users": [
+    {
+      "uid": "u_test01",
+      "username": "testuser",
+      "password": "testpassword",
+      "points": 500.00
+    }
+  ],
+  "sessions": {
+    "tok_testenvtoken026": "u_test01"
+  },
+  "cards": [
+    {
+      "code": "WC2026-TEST-8888",
+      "amount": 100.00,
+      "status": "unused",
+      "created_at": "2026-06-20T12:00:00.000Z"
+    },
+    {
+      "code": "WC2026-TEST-9999",
+      "amount": 500.00,
+      "status": "unused",
+      "created_at": "2026-06-20T12:00:00.000Z"
+    }
+  ],
+  "pools": {},
+  "bets": [],
+  "withdrawals": [],
+  "platform_profit": 0.00
+}
